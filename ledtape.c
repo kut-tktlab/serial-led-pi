@@ -40,8 +40,8 @@ int main()
   }
 
   pinModePwm(LED_GPIO);
-  pwmSetClock(PWM_CLOCK_DIV);
   pwmSetModeMS();	/* mark:spaceモードだよ */
+  pwmSetClock(PWM_CLOCK_DIV);
   pwmSetRange(PWM_RANGE);
 
   /* 5回点灯するよ */
