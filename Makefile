@@ -1,7 +1,7 @@
 CFLAGS = -W -Wall
 LDFLAGS = $(LIBS)
 
-ledtape: ledtape.o pwmfifo.o
+ledtape: test.o serialled.o pwmfifo.o
 	$(CC) $(LDFLAGS) $+ -o $@
 
 .PHONY: clean
