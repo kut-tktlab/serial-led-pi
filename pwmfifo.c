@@ -49,7 +49,7 @@
 typedef unsigned int uint32_t;
 
 /* Base addresses of control registers */
-static uint32_t *gpio, *clock, *pwm, *timer;
+static volatile uint32_t *gpio, *clock, *pwm, *timer;
 
 /* GPIO number */
 static int pwmfifo_pin;
