@@ -2,8 +2,6 @@
  * シリアルLEDテープを点灯させるよ
  */
 
-#include <stdio.h>
-
 #include "serialled.h"
 #include "pwmfifo.h"	/* delayMicroseconds */
 
@@ -19,12 +17,11 @@ int main()
 
   /* セットアップするよ */
   if (ledSetup(LED_GPIO, N_LED) == -1) {
-    fprintf(stderr, "cannot setup serial led.\n");
     return -1;
   }
 
-  /* 5回点灯するよ */
-  for (i = 0; i < 5; i++) {
+  /* 永遠に点灯するよ */
+  for (i = 0; ; i++) {
     int led;
     for (led = 0; led < N_LED; led++) {
       /* 各LEDがRGBの1色ずつ選ぶよ */

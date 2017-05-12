@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-
 #include "pwmfifo.h"
 
 /*
@@ -60,16 +56,8 @@ enum PwmMode {
 };
 static enum PwmMode pwmMode = PWM_MODE_NONE;
 
-/* An aux function doing mmap */
-static void *mmapControlRegs(int fd, off_t offset)
-{
-  void *p;
-  p = mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, offset);
-  if (p == MAP_FAILED) {
-    perror("mmap");
-  }
-  return p;
-}
+#define mmapControlRegs(fd, offset)  ((void*)(offset))
+#define MAP_FAILED  0
 
 /*
  * Set up this GPIO-manipulation module.
@@ -77,15 +65,6 @@ static void *mmapControlRegs(int fd, off_t offset)
  */
 int setupGpio()
 {
-  int fd;
-
-  /* Open /dev/mem (sudo required) */
-  fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
-  if (fd == -1) {
-    perror("/dev/mem");
-    return -1;
-  }
-
   gpio  = mmapControlRegs(fd, GPIO_BASE);
   clock = mmapControlRegs(fd, PWMCLK_BASE);
   pwm   = mmapControlRegs(fd, PWM_BASE);
@@ -107,7 +86,6 @@ int setupGpio()
 void pinModePwm(int pin)
 {
   if (pin != 18 && pin != 19) {
-    fprintf(stderr, "pinModePwm: only GPIO 18 and 19 are supported.\n");
     return;
   }
   /* Set the mode of the GPIO to alt5 */
@@ -134,9 +112,6 @@ void pwmSetClock(unsigned int divider)
   unsigned int pwmctl;
 
   /* Set the PWM control register at first */
-  if (pwmMode == PWM_MODE_NONE) {
-    fprintf(stderr, "Warning: Please set the pwm mode before pwmSetClock()\n");
-  }
   pwmctl = (pwmfifo_pin == 18 ? (PWM1_USEFIFO | PWM1_ENABLE)
                               : (PWM2_USEFIFO | PWM2_ENABLE));
   if (pwmMode == PWM_MODE_MS) {
@@ -145,7 +120,7 @@ void pwmSetClock(unsigned int divider)
   *(pwm + PWM_CTL) = pwmctl;
 
   /* Stop the clock */
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x1;	/* enable=0, osc */
+  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x21;	/* enable=0, osc */
   delayMicroseconds(110);		/* cf. wiringPi.c */
 
   /* Wait while busy */
@@ -154,7 +129,7 @@ void pwmSetClock(unsigned int divider)
 
   /* Set the divider */
   *(clock + PWMCLK_DIV) = (PWMCLK_PASSWD | (divider << 12));
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x11;	/* enable=1, osc */
+  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x211;	/* enable=1, osc */
 
   /* Set the PWM control register again */
   *(pwm + PWM_CTL) = PWM_CLRFIFO;
