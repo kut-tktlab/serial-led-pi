@@ -2,8 +2,6 @@
  * シリアルLEDテープを点灯させるライブラリだよ
  */
 
-#include <stdlib.h>	/* malloc */
-
 #include "serialled.h"
 #include "pwmfifo.h"
 
@@ -30,8 +28,8 @@
 /* LED数 */
 static int nLed;
 
-/* 各LEDの色の配列 (mallocする) */
-static unsigned int *ledColor;
+/* 各LEDの色の配列 */
+static unsigned int ledColor[MAX_N_LED];
 
 
 /*
@@ -50,11 +48,9 @@ int ledSetup(int gpioPin, int n)
   pwmSetClock(PWM_CLOCK_DIV);
   pwmSetRange(PWM_RANGE);
 
-  /* 各素子の色を保存する配列を作るよ */
   if (n < 0) { return -1; }
+  if (n > MAX_N_LED) { return -1; }
   nLed = n;
-  ledColor = malloc(n * sizeof(ledColor[0]));
-  if (ledColor == 0) { return -1; }
   return 0;
 }
 
