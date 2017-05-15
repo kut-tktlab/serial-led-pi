@@ -7,7 +7,7 @@
 /*
  * Addresses in the SoC
  */
-#define PERIPHERAL_BASE	 0x3f000000
+#define PERIPHERAL_BASE	((void*)0x3f000000)
 
 #define GPIO_BASE	(0x00200000 + PERIPHERAL_BASE)
 #define GPFSEL0		(0x00 /sizeof(uint32_t))
@@ -56,7 +56,7 @@ enum PwmMode {
 };
 static enum PwmMode pwmMode = PWM_MODE_NONE;
 
-#define mmapControlRegs(fd, offset)  ((void*)(offset))
+#define mmapControlRegs(fd, offset)  (offset)
 #define MAP_FAILED  0
 
 /*
