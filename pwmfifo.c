@@ -120,16 +120,18 @@ void pwmSetClock(unsigned int divider)
   *(pwm + PWM_CTL) = pwmctl;
 
   /* Stop the clock */
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x21;	/* enable=0, osc */
+  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x1;	/* enable=0, osc */
   delayMicroseconds(110);		/* cf. wiringPi.c */
 
   /* Wait while busy */
-  while ((*(clock + PWMCLK_CTL) & 0x80) != 0) {}
-  delayMicroseconds(1);
+  while ((*(clock + PWMCLK_CTL) & 0x80) != 0) {
+    delayMicroseconds(1);
+  }
 
   /* Set the divider */
   *(clock + PWMCLK_DIV) = (PWMCLK_PASSWD | (divider << 12));
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x211;	/* enable=1, osc */
+  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD|0x11;	/* enable=1, osc */
+  delayMicroseconds(110);
 
   /* Set the PWM control register again */
   *(pwm + PWM_CTL) = PWM_CLRFIFO;
