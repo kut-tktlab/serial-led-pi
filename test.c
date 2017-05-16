@@ -23,14 +23,15 @@ int main()
     return -1;
   }
 
-  /* 5回点灯するよ */
-  for (i = 0; i < 5; i++) {
+  /* 25回点灯するよ */
+  for (i = 0; i < 25; i++) {
     int led;
     for (led = 0; led < N_LED; led++) {
       /* 各LEDがRGBの1色ずつ選ぶよ */
-      int r = ((led + i) % 3 == 0 ? 255 : 0);
-      int g = ((led + i) % 3 == 1 ? 255 : 0);
-      int b = ((led + i) % 3 == 2 ? 255 : 0);
+      int value = 255;
+      int r = ((led + i) % 3 == 0 ? value : 0);
+      int g = ((led + i) % 3 == 1 ? value : 0);
+      int b = ((led + i) % 3 == 2 ? value : 0);
       /* 色を設定 (まだ送信しない) */
       ledSetColor(led, r, g, b);
     }
