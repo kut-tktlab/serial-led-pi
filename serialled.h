@@ -7,6 +7,9 @@ int ledSetup(int gpioPin, int n);
 /* 1素子の色を設定 (まだ送信しない) */
 void ledSetColor(int led, int r, int g, int b);
 
+/* 1素子の色をHSBで設定 (まだ送信しない) */
+void ledSetColorHSB(int led, int h, int s, int v);
+
 /* 色情報を送信! */
 void ledSend();
 
