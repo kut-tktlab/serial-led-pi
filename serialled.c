@@ -19,7 +19,7 @@
 #define PWM_RANGE ((int)((.4 + .85) * CLOCK_MHZ + .5)) /* mark + space (波長) */
 #define ZERO      ((int)(.4 * CLOCK_MHZ + .5))	    /* 0のmark長 */
 #define ONE       ((int)(.8 * CLOCK_MHZ + .5))	    /* 1のmark長 */
-#define SPACE     ((int)(50 / (.4 + .85)) + 1)      /* RETがrange何個分か */
+#define SPACE     ((50 * 4 / 5) + 1)                /* RETがrange何個分か */
 
 /* R,G,Bの値のビット幅 */
 #define RGB_BITS  8
@@ -79,18 +79,22 @@ void ledSetColor(int led, int r, int g, int b)
  */
 void ledSend()
 {
-  int i;
+  static unsigned int buf[MAX_N_LED * 3 * RGB_BITS + SPACE];
+  int i, j;
   for (i = 0; i < nLed; i++) {
     int col = ledColor[i];
     int mask = (1 << (3 * RGB_BITS - 1));
-    for (; mask != 0; mask >>= 1) {
-      pwmWriteFifo((col & mask) ? ONE : ZERO);
+    for (j = 0; j < 3 * RGB_BITS; j++) {
+      buf[i * 3 * RGB_BITS + j] = ((col & mask) ? ONE : ZERO);
+      mask >>= 1;
     }
   }
   /* RET信号 */
   for (i = 0; i < SPACE; i++) {
-    pwmWriteFifo(0);
+    buf[nLed * 3 * RGB_BITS + i] = 0;
   }
+  pwmWriteBlock(buf, nLed * 3 * RGB_BITS + SPACE);
+
   /* Wait until the fifo becomes empty */
   pwmWaitFifoEmpty();
 }

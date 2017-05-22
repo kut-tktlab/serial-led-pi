@@ -27,6 +27,7 @@
 #define PWM_BASE	(0x0020c000 + PERIPHERAL_BASE)
 #define PWM_CTL		(0x00 /sizeof(uint32_t))
 #define PWM_STA		(0x04 /sizeof(uint32_t))
+#define PWM_DMAC	(0x08 /sizeof(uint32_t))
 #define PWM_RNG1	(0x10 /sizeof(uint32_t))
 #define PWM_DAT1	(0x14 /sizeof(uint32_t))
 #define PWM_FIF1	(0x18 /sizeof(uint32_t))
@@ -39,9 +40,23 @@
 #define PWM_CLRFIFO	(1<<6)
 #define PWM1_USEFIFO	(1<<5)
 #define PWM1_ENABLE	(1<<0)
+#define PWMDMAC_ENABLE	(1<<31)
+#define PWMDMAC_THRSHLD	((7<<8)|(7<<0))
 
 #define TIMER_BASE	(0x00003000 + PERIPHERAL_BASE)
 #define TMCLO		(0x04 /sizeof(uint32_t))
+
+#define DMA_BASE	(0x00007000 + PERIPHERAL_BASE)
+#define DMA_CS		(0x00 /sizeof(uint32_t))
+#define DMA_CONBLK_AD	(0x04 /sizeof(uint32_t))
+#define DMA_DEBUG	(0x20 /sizeof(uint32_t))
+#define DMA_RESET	(1<<31)	/* for CS */
+#define DMA_INT		(1<<2)
+#define DMA_END		(1<<1)
+#define DMA_NO_WIDE_BURSTS	(1<<26)	/* for TI */
+#define DMA_PER_MAP(x)	((x)<<16)
+#define DMA_DEST_DREQ	(1<<6)
+#define DMA_WAIT_RESP	(1<<3)
 
 /* paging size */
 #define BLOCK_SIZE	(4 * 1024)
@@ -49,7 +64,7 @@
 typedef unsigned int uint32_t;
 
 /* Base addresses of control registers */
-static volatile uint32_t *gpio, *clock, *pwm, *timer;
+static volatile uint32_t *gpio, *clock, *pwm, *timer, *dma;
 
 /* GPIO number */
 static int pwmfifo_pin;
@@ -90,9 +105,10 @@ int setupGpio()
   clock = mmapControlRegs(fd, PWMCLK_BASE);
   pwm   = mmapControlRegs(fd, PWM_BASE);
   timer = mmapControlRegs(fd, TIMER_BASE);
+  dma   = mmapControlRegs(fd, DMA_BASE);
 
   if (gpio == MAP_FAILED || clock == MAP_FAILED ||
-      pwm  == MAP_FAILED || timer == MAP_FAILED)
+      pwm  == MAP_FAILED || timer == MAP_FAILED || dma == MAP_FAILED)
   {
     return -1;
   }
@@ -159,6 +175,7 @@ void pwmSetClock(unsigned int divider)
   delayMicroseconds(110);
 
   /* Set the PWM control register again */
+  //*(pwm + PWM_DMAC) = PWMDMAC_ENABLE | PWMDMAC_THRSHLD;
   *(pwm + PWM_CTL) = PWM_CLRFIFO;
   *(pwm + PWM_CTL) = pwmctl;
 }
@@ -183,6 +200,15 @@ void pwmWriteFifo(unsigned int byte)
       if (err != 0) { *(pwm + PWM_STA) = err; }
     }
     *(pwm + PWM_FIF1) = byte;
+}
+
+/* Write the contents of an array into PWM FIFO. */
+void pwmWriteBlock(const unsigned int *array, int n)
+{
+  int i;
+  for (i = 0; i < n; i++) {
+    pwmWriteFifo(array[i]);
+  }
 }
 
 /* Wait until the FIFO becomes empty. */
