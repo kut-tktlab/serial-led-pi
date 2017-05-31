@@ -4,10 +4,10 @@ LDFLAGS = $(LIBS)
 .PHONY: all
 all: ledtape rainbow
 
-ledtape: test.o serialled.o pwmfifo.o
+ledtape: test.o serialled.o pwmfifo.o mailbox.o
 	$(CC) $(LDFLAGS) $+ -o $@
 
-rainbow: rainbow.o serialled.o pwmfifo.o
+rainbow: rainbow.o serialled.o pwmfifo.o mailbox.o
 	$(CC) $(LDFLAGS) $+ -o $@
 
 .PHONY: clean

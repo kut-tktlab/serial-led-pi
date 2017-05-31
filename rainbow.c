@@ -41,8 +41,8 @@ int main()
     delayMicroseconds(1000 * 1000 / FPS);
   }
 
-  /* 全部消しましょう */
-  ledClearAll();
+  /* 後片付け */
+  ledCleanup();
 
   return 0;
 }

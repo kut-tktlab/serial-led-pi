@@ -6,20 +6,18 @@
 #include "pwmfifo.h"
 
 /* PWMの分周数 */
-#define PWM_CLOCK_DIV	2	/* 1だとうまく動かなかったよ */
+#define PWM_CLOCK_DIV	25	/* 500MHz (PLLD) / 25 == 20MHz */
 
 /*
  * LEDに送る信号 (pwmディジタル信号)
  * 0: High 0.4us+-150ns -> Low 0.85us+-150ns
  * 1: High 0.8us+-150ns -> Low 0.45us+-150ns
  * RET: Low >=50us
- * 19.2MHz, PWM_CLOCK_DIV==2 のとき1クロック104ns (あまり余裕ない)
  */
-#define CLOCK_MHZ  (19.2 / PWM_CLOCK_DIV)
-#define PWM_RANGE ((int)((.4 + .85) * CLOCK_MHZ + .5)) /* mark + space (波長) */
-#define ZERO      ((int)(.4 * CLOCK_MHZ + .5))	    /* 0のmark長 */
-#define ONE       ((int)(.8 * CLOCK_MHZ + .5))	    /* 1のmark長 */
-#define SPACE     ((50 * 4 / 5) + 1)                /* RETがrange何個分か */
+#define PWM_RANGE 25	/* 1.25us mark + space (波長) */
+#define ZERO      8	/* 0.4us  0のmark長 */
+#define ONE       16	/* 0.8us  1のmark長 */
+#define SPACE     40	/* RET(50us)が何波長(1.25us)分か */
 
 /* R,G,Bの値のビット幅 */
 #define RGB_BITS  8
@@ -55,6 +53,15 @@ int ledSetup(int gpioPin, int n)
 }
 
 /*
+ * 後片付け
+ */
+void ledCleanup()
+{
+  ledClearAll();  /* 消灯! */
+  cleanupGpio();
+}
+
+/*
  * 1素子の色を設定 (まだ送信しない)
  * \param led  素子番号 (0〜)
  * \param r    赤の輝度 (0〜255)
@@ -79,7 +86,7 @@ void ledSetColor(int led, int r, int g, int b)
  */
 void ledSend()
 {
-  static unsigned int buf[MAX_N_LED * 3 * RGB_BITS + SPACE];
+  static unsigned char buf[MAX_N_LED * 3 * RGB_BITS + SPACE];
   int i, j;
   for (i = 0; i < nLed; i++) {
     int col = ledColor[i];
