@@ -4,7 +4,7 @@
 # シリアルLEDテープを虹色に点灯させるよ
 # (c) kut-tktlab, 2017
 
-from ctypes import cdll, c_int	# C言語の関数を呼び出します
+from ctypes import cdll	# C言語の関数を呼び出します
 import sys
 import time
 
@@ -33,7 +33,7 @@ for i in range(20 * FPS):
     b = 128
 
     # 色を設定 (まだ送信しない)
-    ledlib.ledSetColorHSB(c_int(led), c_int(h), c_int(s), c_int(b))
+    ledlib.ledSetColorHSB(led, h, s, b)
 
   # 送信!
   ledlib.ledSend()

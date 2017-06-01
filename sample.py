@@ -4,7 +4,7 @@
 # シリアルLEDテープを点灯させるよ
 # (c) kut-tktlab, 2017
 
-from ctypes import cdll, c_int	# C言語の関数を呼び出します
+from ctypes import cdll	# C言語の関数を呼び出します
 import sys
 import time
 
@@ -32,7 +32,7 @@ for i in range(25):
     b = value if (led + i) % 3 == 2 else 0
 
     # 色を設定 (まだ送信しない)
-    ledlib.ledSetColor(c_int(led), c_int(r), c_int(g), c_int(b))
+    ledlib.ledSetColor(led, r, g, b)
 
   # 送信!
   ledlib.ledSend()
