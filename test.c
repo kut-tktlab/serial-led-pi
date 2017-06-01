@@ -3,9 +3,9 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>	/* usleep */
 
 #include "serialled.h"
-#include "pwmfifo.h"	/* delayMicroseconds */
 
 /* GPIO番号 */
 #define LED_GPIO  18
@@ -39,7 +39,7 @@ int main()
     ledSend();
 
     /* 1秒待ってください */
-    delayMicroseconds(1000 * 1000);
+    usleep(1000 * 1000);
   }
 
   /* 後片付け */

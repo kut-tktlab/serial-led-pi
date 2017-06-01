@@ -1,21 +1,28 @@
 /*
+ * For RPi 1, please set PI_VERSION to 1, though I only tested on RPi3.
+ *
  * References:
  * - GPIO and PWM
  *   - WiringPi - http://wiringpi.com
  * - DMA
  *   - RPIO     - https://github.com/metachris/RPIO
- *   - rpi-gppio-dma-demo     - https://github.com/hzeller/rpi-gpio-dma-demo
+ *   - rpi-gpio-dma-demo      - https://github.com/hzeller/rpi-gpio-dma-demo
  *   - PeterLemon/RaspberryPi - https://github.com/PeterLemon/RaspberryPi
  */
 
 #include <stdio.h>
-#include <unistd.h>	/* lseek */
 #include <fcntl.h>
 #include <stdint.h>	/* uint32_t, etc. */
+#include <unistd.h>	/* usleep */
+#include <signal.h>	/* sigaction */
 #include <sys/mman.h>
 
 #include "mailbox.h"
 #include "pwmfifo.h"
+
+#ifndef PI_VERSION
+# define PI_VERSION  2	/* RPi 2 and 3 */
+#endif
 
 #define SUCCESS  0
 #define FAILURE  -1
@@ -24,7 +31,11 @@
  * Control-register addresses & values
  * -----------------------------------
  */
-#define PERIPHERAL_BASE	 0x3f000000	/* for RPi 2, 3 */
+#if PI_VERSION == 1
+# define PERIPHERAL_BASE  0x20000000	/* for RPi 1 (not tested) */
+#else
+# define PERIPHERAL_BASE  0x3f000000	/* for RPi 2, 3 */
+#endif
 
 #define GPIO_BASE	(0x00200000 + PERIPHERAL_BASE)
 #define GPFSEL0		(0x00 /4)
@@ -71,11 +82,14 @@
 #define DMA_CONBLK_AD	(0x04 /4)
 #define DMA_DEBUG	(0x20 /4)
 #define DMA_CHANNEL_INC	(0x100/4)
-#define DMA_ENABLE	(0xff0/4)
 /* DMA_CS */
 #define DMA_RESET	(1<<31)
 #define DMA_INT		(1<<2)
 #define DMA_END		(1<<1)
+#define DMA_ACTIVE	(1<<0)
+#define DMA_PRIORITY(x)		((x)<<16)
+#define DMA_PANIC_PRIORITY(x)	((x)<<20)
+#define DMA_WAIT_FOR_OUTSTANDING_WRITES	(1<<28)
 /* Transfer Information (TI) in a Control Block */
 #define DMA_NO_WIDE_BURSTS	(1<<26)
 #define DMA_PER_MAP(x)	((x)<<16)	/* peripheral map */
@@ -90,11 +104,10 @@
 
 /* paging size */
 #define PAGE_SIZE	4096
-#define PAGE_SHIFT	12
 
 /* Base addresses of control registers */
 static volatile uint32_t *gpio;
-static volatile uint32_t *clock;
+static volatile uint32_t *clkman;
 static volatile uint32_t *pwm;
 static volatile uint32_t *timer;
 static volatile uint32_t *dma;
@@ -129,14 +142,14 @@ int setupGpio()
     return FAILURE;
   }
 
-  gpio  = mmapControlRegs(fd, GPIO_BASE);
-  clock = mmapControlRegs(fd, PWMCLK_BASE);
-  pwm   = mmapControlRegs(fd, PWM_BASE);
-  timer = mmapControlRegs(fd, TIMER_BASE);
-  dma   = mmapControlRegs(fd, DMA_BASE);
+  gpio   = mmapControlRegs(fd, GPIO_BASE);
+  clkman = mmapControlRegs(fd, PWMCLK_BASE);
+  pwm    = mmapControlRegs(fd, PWM_BASE);
+  timer  = mmapControlRegs(fd, TIMER_BASE);
+  dma    = mmapControlRegs(fd, DMA_BASE);
 
-  if (gpio == MAP_FAILED || clock == MAP_FAILED ||
-      pwm  == MAP_FAILED || timer == MAP_FAILED || dma == MAP_FAILED)
+  if (gpio == MAP_FAILED || clkman == MAP_FAILED ||
+      pwm  == MAP_FAILED || timer  == MAP_FAILED || dma == MAP_FAILED)
   {
     return FAILURE;
   }
@@ -211,6 +224,7 @@ void pwmSetClock(unsigned int divider)
   unsigned int pwmctl;
 
   /* Set the PWM control register at first */
+  /* (I don't know why but unless doing so, PWM didn't work) */
   if (pwmMode == PWM_MODE_NONE) {
     fprintf(stderr, "Warning: Please set the pwm mode before pwmSetClock()\n");
   }
@@ -222,18 +236,18 @@ void pwmSetClock(unsigned int divider)
   *(pwm + PWM_CTL) = pwmctl;
 
   /* Stop the clock */
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD | PWMCLK_SRC;
-  delayMicroseconds(110);		/* cf. wiringPi.c */
+  *(clkman + PWMCLK_CTL) = PWMCLK_PASSWD | PWMCLK_SRC;
+  usleep(110);		/* cf. wiringPi.c */
 
   /* Wait while busy */
-  while ((*(clock + PWMCLK_CTL) & 0x80) != 0) {
-    delayMicroseconds(1);
+  while ((*(clkman + PWMCLK_CTL) & 0x80) != 0) {
+    usleep(1);
   }
 
   /* Set the divider */
-  *(clock + PWMCLK_DIV) = (PWMCLK_PASSWD | (divider << 12));
-  *(clock + PWMCLK_CTL) = PWMCLK_PASSWD | PWMCLK_SRC | PWMCLK_ENABLE;
-  delayMicroseconds(110);
+  *(clkman + PWMCLK_DIV) = (PWMCLK_PASSWD | (divider << 12));
+  *(clkman + PWMCLK_CTL) = PWMCLK_PASSWD | PWMCLK_SRC | PWMCLK_ENABLE;
+  usleep(110);
 
   /* Set the PWM control register again */
   *(pwm + PWM_DMAC) = PWMDMAC_ENABLE | PWMDMAC_THRSHLD;
@@ -247,18 +261,20 @@ void pwmSetClock(unsigned int divider)
 void pwmSetRange(unsigned int range)
 {
   *(pwm + PWM_RNG1) = range;
-  delayMicroseconds(10);
+  usleep(10);
   *(pwm + PWM_RNG2) = range;
-  delayMicroseconds(10);
+  usleep(10);
 }
 
 /*
  * DMA
  * ----------------
+ * We use DMA for putting data sequentially to PWM.
  */
 
 /* DMA channel used for PWM control (0..14) */
-#define DMA_CHANNEL	0
+/* In rpi-gpio-dma-demo, it is said channel 5 is usually free */
+#define DMA_CHANNEL	5
 
 /*
  * number of memory pages for DMA source and a control block:
@@ -266,13 +282,19 @@ void pwmSetRange(unsigned int range)
  */
 #define N_DMA_PAGES	2
 
-#define MAX_N_DMA_SAMPLES	((N_DMA_PAGES*PAGE_SIZE-sizeof(dma_cb_t))/4)
+#define MAX_N_DMA_SAMPLES  ((int)(N_DMA_PAGES*PAGE_SIZE-sizeof(dma_cb_t))/4)
 
 /* mailbox & memory allocation */
 static int mbox_handle;
 static unsigned int mem_ref;	/* from mem_alloc() */
 static unsigned int bus_addr;	/* from mem_lock() */
 static uint8_t *virtaddr;	/* virtual addr of bus_addr */
+
+/* a const used for mem_alloc */
+/* https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface */
+#define MEM_FLAG_DIRECT		(1 << 2)
+#define MEM_FLAG_COHERENT	(2 << 2)
+#define MEM_FLAG_L1_NONALLOCATING	(MEM_FLAG_DIRECT | MEM_FLAG_COHERENT)
 
 #define DMA_CB_ADDR	((dma_cb_t *)virtaddr)
 #define	DMA_SRC_ADDR	((uint32_t *)(virtaddr + sizeof(dma_cb_t)))
@@ -282,11 +304,8 @@ static uint8_t *virtaddr;	/* virtual addr of bus_addr */
 /* VC bus addr -> ARM physical addr */
 #define BUS_TO_PHYS(x)  ((x) & 0x3fffffff)
 
-/* ARM virtual addr -> ARM physical addr */
+/* ARM virtual addr -> VC bus addr */
 #define VIRT_TO_PHYS(x)	(bus_addr + ((uint8_t *)(x) - virtaddr))
-
-/* a const used for mem_alloc */
-#define MEM_FLAG	0x04		/* for RPi 2, 3 */
 
 /* DMA Control Block */
 typedef struct {
@@ -318,39 +337,28 @@ static int allocPagesForDma()
     fprintf(stderr, "Failed to open mailbox\n");
     return FAILURE;
   }
-  delayMicroseconds(1000);
+  usleep(1000);
 
   /* Allocate memory */
-  mem_ref = mem_alloc(mbox_handle, N_DMA_PAGES*PAGE_SIZE, PAGE_SIZE, MEM_FLAG);
+  mem_ref = mem_alloc(mbox_handle, N_DMA_PAGES * PAGE_SIZE, PAGE_SIZE,
+                      MEM_FLAG_L1_NONALLOCATING);
   bus_addr = mem_lock(mbox_handle, mem_ref);
   virtaddr = mapmem(BUS_TO_PHYS(bus_addr), N_DMA_PAGES * PAGE_SIZE);
 
+#if DEBUG
   printf("mem_ref %u\n", mem_ref);
   printf("bus_addr = %x\n", bus_addr);
   printf("virtaddr = %p\n", virtaddr);
+#endif
   return SUCCESS;
 }
 
-/*
- * Set up the DMA controller
- */
-static int setupDma()
+/* Wait for the DMA channel to be inactive */
+static void waitDmaInactive()
 {
-  if (allocPagesForDma() == FAILURE) {
-    return FAILURE;
+  while ((*(dmaCh + DMA_CS) & DMA_ACTIVE) != 0) {
+    usleep(1);
   }
-
-  if (dma == 0 || dma == MAP_FAILED) {
-    fprintf(stderr, "DMA controller register is not mapped\n");
-    return FAILURE;
-  }
-  dmaCh = dma + DMA_CHANNEL_INC * DMA_CHANNEL;
-
-  *(dmaCh + DMA_CS) = DMA_RESET;
-  delayMicroseconds(10);
-  *(dmaCh + DMA_CS) = DMA_INT | DMA_END;  /* clear flags */
-
-  return SUCCESS;
 }
 
 /*
@@ -359,17 +367,59 @@ static int setupDma()
 static void cleanupDma()
 {
   /* wait for the DMA to finish a current task */
-  delayMicroseconds(3000);
+  waitDmaInactive();
 
   if (virtaddr != 0) {
     unmapmem(virtaddr, N_DMA_PAGES * PAGE_SIZE);
     mem_unlock(mbox_handle, mem_ref);
     mem_free(mbox_handle, mem_ref);
-    printf("closing mailbox...\n");
     mbox_close(mbox_handle);
-    printf("mailbox closed\n");
     virtaddr = 0;
+#if DEBUG
+    printf("mailbox closed\n");
+#endif
   }
+}
+
+/* signal handler for cleaning up */
+static void terminationHandler(int signum)
+{
+  cleanupDma();
+  signum = signum;	/* suppress 'unused' warning */
+}
+
+/*
+ * Set up the DMA controller
+ */
+static int setupDma()
+{
+  struct sigaction sa;
+
+  /* allocate memory used for DMA */
+  if (allocPagesForDma() == FAILURE) {
+    return FAILURE;
+  }
+
+  /* initialize the DMA channel */
+  if (dma == 0 || dma == MAP_FAILED) {
+    fprintf(stderr, "DMA controller register is not mapped\n");
+    return FAILURE;
+  }
+  dmaCh = dma + DMA_CHANNEL_INC * DMA_CHANNEL;
+
+  *(dmaCh + DMA_CS) = DMA_RESET;
+  usleep(10);
+  *(dmaCh + DMA_CS) = DMA_INT | DMA_END;  /* clear flags */
+
+  /* set a signal handler */
+  sa.sa_handler = terminationHandler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  sigaction(SIGINT,  &sa, 0);
+  sigaction(SIGHUP,  &sa, 0);
+  sigaction(SIGTERM, &sa, 0);
+
+  return SUCCESS;
 }
 
 /*
@@ -392,11 +442,13 @@ static void startDma(int n_samples)
   cbp->dst = PWM_PHYS_FIFO;
   cbp->length = 4 * n_samples;
   cbp->stride = 0;
-  cbp->next = 0;
+  cbp->next = 0;	/* no next control block */
 
   *(dmaCh + DMA_CONBLK_AD) = VIRT_TO_PHYS(cbp);
   *(dmaCh + DMA_DEBUG) = 7;			/* clear flags */
-  *(dmaCh + DMA_CS) = 0x10880001;		/* go with mid priority */
+  *(dmaCh + DMA_CS) = DMA_WAIT_FOR_OUTSTANDING_WRITES |
+                DMA_PANIC_PRIORITY(8) | DMA_PRIORITY(8) | /* mid priority */
+                DMA_ACTIVE;				  /* go! */
 }
 
 /*
@@ -411,6 +463,9 @@ void pwmWriteBlock(const unsigned char *array, int n)
     fprintf(stderr, "Error: n_samples must be <= %d\n", MAX_N_DMA_SAMPLES);
     return;
   }
+
+  /* If the DMA channel is active, wait for it to finish */
+  waitDmaInactive();
 
   /* Move the data to a space whose physical address is known */
   for (i = 0; i < n; i++) {
@@ -428,22 +483,6 @@ void pwmWaitFifoEmpty()
 {
   /* wait while not empty */
   while ((*(pwm + PWM_STA) & 0x2) == 0) {
-    delayMicroseconds(1);
+    usleep(1);
   }
 }
-
-/*
- * delay
- * ----------------
- */
-
-/* Wait for usec microseconds.  */
-void delayMicroseconds(unsigned int usec)
-{
-  /* current + usec */
-  uint32_t target = *(timer + TMCLO) + usec;
-
-  /* wait until target */
-  while (*(timer + TMCLO) < target) {}
-}
-

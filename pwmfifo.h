@@ -8,5 +8,3 @@ void pwmSetClock(unsigned int divider);
 void pwmSetRange(unsigned int range);
 void pwmWriteBlock(const unsigned char *array, int n);
 void pwmWaitFifoEmpty();
-
-void delayMicroseconds(unsigned int usec);
