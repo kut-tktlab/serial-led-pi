@@ -1,15 +1,12 @@
 CFLAGS = -W -Wall
-LDFLAGS = $(LIBS)
+LDFLAGS =
 
 .PHONY: all
-all: ledtape rainbow
+all: serialled.so
 
-ledtape: test.o serialled.o pwmfifo.o mailbox.o
-	$(CC) $(LDFLAGS) $+ -o $@
-
-rainbow: rainbow.o serialled.o pwmfifo.o mailbox.o
-	$(CC) $(LDFLAGS) $+ -o $@
+serialled.so: serialled.o pwmfifo.o mailbox.o
+	$(CC) $(LDFLAGS) $+ -shared -o $@
 
 .PHONY: clean
 clean:
-	$(RM) *.o a.out *.pyc ledtape rainbow
+	$(RM) *.o *.so a.out *.pyc
