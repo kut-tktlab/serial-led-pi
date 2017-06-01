@@ -1,8 +1,11 @@
 /*
  * References:
- * - WiringPi - http://wiringpi.com
- * - RPIO     - https://github.com/metachris/RPIO
- * - PeterLemon/RaspberryPi - https://github.com/PeterLemon/RaspberryPi
+ * - GPIO and PWM
+ *   - WiringPi - http://wiringpi.com
+ * - DMA
+ *   - RPIO     - https://github.com/metachris/RPIO
+ *   - rpi-gppio-dma-demo     - https://github.com/hzeller/rpi-gpio-dma-demo
+ *   - PeterLemon/RaspberryPi - https://github.com/PeterLemon/RaspberryPi
  */
 
 #include <stdio.h>
@@ -263,6 +266,8 @@ void pwmSetRange(unsigned int range)
  */
 #define N_DMA_PAGES	2
 
+#define MAX_N_DMA_SAMPLES	((N_DMA_PAGES*PAGE_SIZE-sizeof(dma_cb_t))/4)
+
 /* mailbox & memory allocation */
 static int mbox_handle;
 static unsigned int mem_ref;	/* from mem_alloc() */
@@ -316,7 +321,7 @@ static int allocPagesForDma()
   delayMicroseconds(1000);
 
   /* Allocate memory */
-  mem_ref = mem_alloc(mbox_handle, N_DMA_PAGES * PAGE_SIZE, PAGE_SIZE, MEM_FLAG);
+  mem_ref = mem_alloc(mbox_handle, N_DMA_PAGES*PAGE_SIZE, PAGE_SIZE, MEM_FLAG);
   bus_addr = mem_lock(mbox_handle, mem_ref);
   virtaddr = mapmem(BUS_TO_PHYS(bus_addr), N_DMA_PAGES * PAGE_SIZE);
 
@@ -402,7 +407,12 @@ void pwmWriteBlock(const unsigned char *array, int n)
   int i;
   uint32_t *srcp = DMA_SRC_ADDR;
 
-  /* Move the data to a space of which the physical address is known */
+  if (n > MAX_N_DMA_SAMPLES) {
+    fprintf(stderr, "Error: n_samples must be <= %d\n", MAX_N_DMA_SAMPLES);
+    return;
+  }
+
+  /* Move the data to a space whose physical address is known */
   for (i = 0; i < n; i++) {
     srcp[i] = array[i];
   }

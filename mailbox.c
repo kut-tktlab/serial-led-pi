@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <sys/stat.h>
 
 #include "mailbox.h"
 
@@ -68,15 +67,13 @@ void *mapmem(unsigned base, unsigned size)
    return (char *)mem + offset;
 }
 
-void *unmapmem(void *addr, unsigned size)
+void unmapmem(void *addr, unsigned size)
 {
    int s = munmap(addr, size);
    if (s != 0) {
       printf("munmap error %d\n", s);
       exit (-1);
    }
-
-   return NULL;
 }
 
 /*
@@ -103,7 +100,6 @@ unsigned mem_alloc(int file_desc, unsigned size, unsigned align, unsigned flags)
 {
    int i=0;
    unsigned p[32];
-printf("Requesting %d bytes\n", size);
    p[i++] = 0; // size
    p[i++] = 0x00000000; // process request
 
@@ -250,17 +246,9 @@ int mbox_open() {
    // open a char device file used for communicating with kernel mbox driver
    file_desc = open(DEVICE_FILE_NAME, 0);
    if (file_desc < 0) {
-      unlink(DEVICE_FILE_NAME);
-      if (mknod(DEVICE_FILE_NAME, S_IFCHR|0600, makedev(MAJOR_NUM, 0)) < 0) {
-         printf("Failed to create mailbox device\n");
-         exit(-1);
-      }
-      file_desc = open(DEVICE_FILE_NAME, 0);
-      if (file_desc < 0) {
-         printf("Can't open device file: %s\n", DEVICE_FILE_NAME);
-         printf("Try creating a device file with: sudo mknod %s c %d 0\n", DEVICE_FILE_NAME, MAJOR_NUM);
-         exit(-1);
-      }
+      printf("Can't open device file: %s\n", DEVICE_FILE_NAME);
+      printf("Try creating a device file with: sudo mknod %s c %d 0\n", DEVICE_FILE_NAME, MAJOR_NUM);
+      exit(-1);
    }
    return file_desc;
 }
