@@ -81,3 +81,10 @@ MIT.
 subdirectory `/host_applications/linux/apps/hello_pi/hello_fft` of
 <https://github.com/raspberrypi/userland/>.<br/>
 See the top of those files for their license.
+
+## Note
+
+[Adafruit](https://www.adafruit.com) から
+RaspPi + NeoPixel用の[ライブラリ](https://learn.adafruit.com/neopixels-on-raspberry-pi/software)が提供されているようなので，最初からそれを使えばよかったのでは? と自分でも思いますが…。
+
+単純で，標準のツールとライブラリだけで使えるのがささやかな存在意義かと思います。
