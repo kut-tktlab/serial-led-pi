@@ -10,14 +10,23 @@
 
 /*
  * LEDに送る信号 (pwmディジタル信号)
+ * (シリアルLEDテープ http://ssci.to/1400 の場合)
  * 0: High 0.4us+-150ns -> Low 0.85us+-150ns
  * 1: High 0.8us+-150ns -> Low 0.45us+-150ns
  * RET: Low >=50us
  */
-#define PWM_RANGE 25	/* 1.25us mark + space (波長) */
+#define PWM_RANGE 25	/* 1.25us 1波長 */
 #define ZERO      8	/* 0.4us  0のmark長 */
 #define ONE       16	/* 0.8us  1のmark長 */
 #define SPACE     40	/* RET(50us)が何波長(1.25us)分か */
+
+/*
+ * R,G,Bの送信順序
+ * http://ssci.to/1400 の場合はG,R,Bの順
+ */
+#define COLOR_ORDER	ORDER_GRB
+#define ORDER_GRB	0
+#define ORDER_RGB	1
 
 /* R,G,Bの値のビット幅 */
 #define RGB_BITS  8
@@ -61,6 +70,8 @@ void ledCleanup()
   cleanupGpio();
 }
 
+#define PACK_COLOR(h,m,l)  (((h)<<(2*RGB_BITS))|((m)<<RGB_BITS)|(l))
+
 /*
  * 1素子の色を設定 (まだ送信しない)
  * \param led  素子番号 (0〜)
@@ -77,8 +88,12 @@ void ledSetColor(int led, int r, int g, int b)
   if (r > RGB_MAX) { r = RGB_MAX; }
   if (g > RGB_MAX) { g = RGB_MAX; }
   if (b > RGB_MAX) { b = RGB_MAX; }
-  /* シリアルLEDテープ http://ssci.to/1399 はG, R, Bの順 */
-  ledColor[led] = ((g << (2 * RGB_BITS)) | (r << RGB_BITS) | b);
+
+#if COLOR_ORDER == ORDER_GRB
+  ledColor[led] = PACK_COLOR(g, r, b);
+#else
+  ledColor[led] = PACK_COLOR(r, g, b);
+#endif
 }
 
 /*
