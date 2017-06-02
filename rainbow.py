@@ -8,7 +8,7 @@ from ctypes import cdll	# C言語の関数を呼び出します
 import sys
 import time
 
-# LEDテープの接続先GPIO番号 (18 or 19)
+# LEDテープの接続先GPIO番号 (12,13,18,19のいずれか)
 LED_GPIO = 18
 
 # テープ上のLEDの個数

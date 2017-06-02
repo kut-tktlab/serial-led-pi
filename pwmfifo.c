@@ -41,6 +41,7 @@
 #define GPFSEL0		(0x00 /4)
 #define GPSET0		(0x1c /4)
 #define GPCLR0		(0x28 /4)
+#define GPFSEL_ALT0	4
 #define GPFSEL_ALT5	2
 
 #define PWMCLK_BASE	(0x00101000 + PERIPHERAL_BASE)
@@ -174,9 +175,6 @@ int cleanupGpio()
  * ----------------
  */
 
-/* GPIO number */
-static int pwmfifoPin;
-
 /* PWM mode */
 enum PwmMode {
   PWM_MODE_NONE = 0,
@@ -185,19 +183,28 @@ enum PwmMode {
 };
 static enum PwmMode pwmMode = PWM_MODE_NONE;
 
+/* PWM channel */
+enum PwmChannel {
+  PWM_CH_NONE = 0, PWM_CH1, PWM_CH2
+};
+static enum PwmChannel pwmChannel = PWM_CH_NONE;
+
 /*
  * Set the pin mode to PWM_OUTPUT.
+ * Only GPIO 12, 13, 18, and 19 are supported.
  */
 void pinModePwm(int pin)
 {
-  if (pin != 18 && pin != 19) {
-    fprintf(stderr, "pinModePwm: only GPIO 18 and 19 are supported.\n");
+  int alt;
+  if (!(pin == 12 || pin == 13 || pin == 18 || pin == 19)) {
+    fprintf(stderr, "pinModePwm: only GPIO 12,13,18,19 are supported.\n");
     return;
   }
-  /* Set the mode of the GPIO to alt5 */
-  *(gpio + GPFSEL0 + pin/10) = GPFSEL_ALT5 << ((pin % 10) * 3);
+  /* Set the mode of the GPIO to alt0 or alt5 */
+  alt = (pin <= 13 ? GPFSEL_ALT0 : GPFSEL_ALT5);
+  *(gpio + GPFSEL0 + pin/10) = alt << ((pin % 10) * 3);
 
-  pwmfifoPin = pin;
+  pwmChannel = ((pin & 1) == 0 ? PWM_CH1 : PWM_CH2);
 }
 
 /*
@@ -225,13 +232,13 @@ void pwmSetClock(unsigned int divider)
 
   /* Set the PWM control register at first */
   /* (I don't know why but unless doing so, PWM didn't work) */
-  if (pwmMode == PWM_MODE_NONE) {
+  if (pwmMode == PWM_MODE_NONE || pwmChannel == PWM_CH_NONE) {
     fprintf(stderr, "Warning: Please set the pwm mode before pwmSetClock()\n");
   }
-  pwmctl = (pwmfifoPin == 18 ? (PWM1_USEFIFO | PWM1_ENABLE)
-                             : (PWM2_USEFIFO | PWM2_ENABLE));
+  pwmctl = (pwmChannel == PWM_CH1 ? (PWM1_USEFIFO | PWM1_ENABLE)
+                                  : (PWM2_USEFIFO | PWM2_ENABLE));
   if (pwmMode == PWM_MODE_MS) {
-    pwmctl |= (pwmfifoPin == 18 ? PWM1_MSMODE : PWM2_MSMODE);
+    pwmctl |= (pwmChannel == PWM_CH1 ? PWM1_MSMODE : PWM2_MSMODE);
   }
   *(pwm + PWM_CTL) = pwmctl;
 
@@ -256,7 +263,7 @@ void pwmSetClock(unsigned int divider)
 }
 
 /*
- * Set PWM range. (Only supports GPIO #18 and #19)
+ * Set PWM range.
  */
 void pwmSetRange(unsigned int range)
 {
