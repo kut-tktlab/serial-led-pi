@@ -1,10 +1,9 @@
 # serial-led-pi
 
-シリアルLEDテープを光らせるサンプルプログラム。
-
+シリアルLEDテープを光らせる簡単なプログラムとライブラリ。<br/>
 [Switch Science](https://www.switch-science.com) [SSCI-014007](http://ssci.to/1400) や [Adafruit](https://www.adafruit.com) [NeoPixel](https://www.adafruit.com/category/168) 等のLEDテープをRaspberry Piで光らせます。
 
-## 使い方
+## Quick Start
 
 [SSCI-014007](http://ssci.to/1400) のDIN端子をGPIO #18に，+5V, GND端子をそれぞれ5V, GND端子に接続し，下記を実行してください。
 
@@ -16,9 +15,8 @@ $ sudo ./rainbow.py
 
 18番以外のGPIOピンを使う場合は，上記のPythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
 
-### SSCI-014007 以外のLEDテープを使う場合
-
-[SSCI-014007](http://ssci.to/1400) (及び同じ素子を使った製品) 以外のLEDテープを使う場合は，通信仕様に合わせて `serialled.c` 中の下記の定数を変更してから上記を実行してください。
+[SSCI-014007](http://ssci.to/1400) (及び同じ素子を使った製品) 以外のLEDテープを使う場合は，通信仕様に合わせて `serialled.c` 中の下記の定数を変更してからmakeを実行してください。
+`PWM_RANGE`, `ZERO`, `ONE` は，0.05 &micro;s を 1 とする整数で指定してください。1単位時間を変更する場合は `PWM_CLOCK_DIV` の値を変更してください。
 
 ```c
 /*
@@ -42,7 +40,6 @@ $ sudo ./rainbow.py
 #define ORDER_RGB       1
 ```
 
-`PWM_RANGE`, `ZERO`, `ONE` は，0.05 &micro;s を 1 とする整数で指定してください。1単位時間を変更する場合は `PWM_CLOCK_DIV` の値を変更してください。
 
 ## Files
   - Python
