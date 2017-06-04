@@ -13,34 +13,9 @@ $ sudo ./sample.py
 $ sudo ./rainbow.py
 ```
 
-ただし，RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから実行してください (なお，RPi 3 以外の動作確認はしていません)。
-
-18番以外のGPIOピンを使う場合は，上記のPythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
-
-SSCI-014007 (及び同じ素子を使った製品) 以外のLEDテープを使う場合は，通信仕様に合わせて `serialled.c` 中の下記の定数を変更してからmakeを実行してください。
-`PWM_RANGE`, `ZERO`, `ONE` は，0.05 &micro;s を 1 とする整数で指定してください。1単位時間を変更する場合は `PWM_CLOCK_DIV` の値を変更してください。
-
-```c
-/*
- * LEDに送る信号 (pwmディジタル信号)
- * (シリアルLEDテープ http://ssci.to/1400 の場合)
- * 0: High 0.4us+-150ns -> Low 0.85us+-150ns
- * 1: High 0.8us+-150ns -> Low 0.45us+-150ns
- * RET: Low >=50us
- */
-#define PWM_RANGE 25    /* 1.25us 1波長 */
-#define ZERO      8     /* 0.4us  0のmark長 */
-#define ONE       16    /* 0.8us  1のmark長 */
-#define SPACE     40    /* RET(50us)が何波長(1.25us)分か */
-
-/*
- * R,G,Bの送信順序
- * http://ssci.to/1400 の場合はG,R,Bの順
- */
-#define COLOR_ORDER     ORDER_GRB
-#define ORDER_GRB       0
-#define ORDER_RGB       1
-```
+ - RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから実行してください (なお，RPi 3 以外の動作確認はしていません)。
+ - 18番以外のGPIOピンを使う場合は，上記のPythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
+ - WS2812Bコントローラ (1ビットの長さ1.25&micro;s, High出力時間 (T0H, T1H) 0.4&micro;s, 0.8&micro;s) の通信仕様に合わせています。ちがう場合は `serialled.c` 中の定数を変更してください。
 
 
 ## Files
