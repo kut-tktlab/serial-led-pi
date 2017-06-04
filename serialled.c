@@ -1,49 +1,83 @@
 /*
- * シリアルLEDテープを点灯させるライブラリだよ
+ * serialled.c:
+ * A library for controlling a LED strip like Adafruit NeoPixels.
+ *
+ * Copyright (c) 2017 Yoshiaki Takata
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
 #include "serialled.h"
 #include "pwmfifo.h"
 
-/* PWMの分周数 */
-#define PWM_CLOCK_DIV	25	/* 500MHz (PLLD) / 25 == 20MHz */
-
 /*
- * LEDに送る信号 (pwmディジタル信号)
- * (シリアルLEDテープ http://ssci.to/1400 の場合)
- * 0: High 0.4us+-150ns -> Low 0.85us+-150ns
- * 1: High 0.8us+-150ns -> Low 0.45us+-150ns
- * RET: Low >=50us
+ * PWM clock divisor:
+ * in pwmfifo.c, we choose PLL_D (500MHz) as the clock source.
  */
-#define PWM_RANGE 25	/* 1.25us 1波長 */
-#define ZERO      8	/* 0.4us  0のmark長 */
-#define ONE       16	/* 0.8us  1のmark長 */
-#define SPACE     40	/* RET(50us)が何波長(1.25us)分か */
+#define PWM_CLOCK_DIV	25	/* 500MHz / 25 == 20MHz */
 
 /*
- * R,G,Bの送信順序
- * http://ssci.to/1400 の場合はG,R,Bの順
+ * PWM bit representation:
+ *     ____                ________
+ * 0: /    \________   1: /        \____
+ *    <---->              <-------->
+ *     T0H                  T1H
+ *    <------------>
+ *     T_CYCLE
+ *
+ * For WS2812B-based LED strips (e.g. <http://ssci.to/1400>):
+ *   T_CYCLE = 1.25us +-600ns
+ *   T0H     = 0.4 us +-150ns
+ *   T1H     = 0.8 us +-150ns
+ *   RESET code = Low >=50us
+ */
+#define T_CYCLE		25	/* 1.25us * 20MHz */
+#define T0H		8	/* 0.4 us */
+#define T1H		16	/* 0.8 us */
+#define RST_BITS	40	/* RESET (50us) == 40 * 1.25us */
+
+/*
+ * Transmission order of R,G,B:
+ * For WS2812B, the order is G,R,B.
  */
 #define COLOR_ORDER	ORDER_GRB
 #define ORDER_GRB	0
 #define ORDER_RGB	1
 
-/* R,G,Bの値のビット幅 */
+/* The number of bits for each of R,G,B */
 #define RGB_BITS  8
 #define RGB_MAX   ((1 << RGB_BITS) - 1)
 
-/* LED数 */
+
+/* The number of LEDs in the strip */
 static int nLed;
 
-/* 各LEDの色の配列 */
+/* A buffer for keeping the color of each LED */
 static unsigned int ledColor[MAX_N_LED];
 
 
 /*
- * セットアップするよ
- * \param gpioPin  LEDテープのGPIO番号
- * \param n        LEDの個数
- * \return  成功時 0, 失敗時 -1
+ * Setting up the hardware:
+ * call this function at the beginning.
+ * \param gpioPin  GPIO-number for the LED strip.
+ * \param n        The number of LEDs in the LED strip.
+ * \return  0 for success, -1 for failure.
  */
 int ledSetup(int gpioPin, int n)
 {
@@ -51,9 +85,9 @@ int ledSetup(int gpioPin, int n)
     return -1;
   }
   pinModePwm(gpioPin);
-  pwmSetModeMS();	/* mark:spaceモードだよ */
+  pwmSetModeMS();	/* mark:space mode */
   pwmSetClock(PWM_CLOCK_DIV);
-  pwmSetRange(PWM_RANGE);
+  pwmSetRange(T_CYCLE);
 
   if (n < 0) { return -1; }
   if (n > MAX_N_LED) { return -1; }
@@ -62,22 +96,22 @@ int ledSetup(int gpioPin, int n)
 }
 
 /*
- * 後片付け
+ * Cleaning up: call this function at the end.
  */
 void ledCleanup()
 {
-  ledClearAll();  /* 消灯! */
+  ledClearAll();  /* Turn off all lights! */
   cleanupGpio();
 }
 
 #define PACK_COLOR(h,m,l)  (((h)<<(2*RGB_BITS))|((m)<<RGB_BITS)|(l))
 
 /*
- * 1素子の色を設定 (まだ送信しない)
- * \param led  素子番号 (0〜)
- * \param r    赤の輝度 (0〜255)
- * \param g    緑　〃
- * \param b    青　〃
+ * Set the color of one LED (not sent to the strip in this function)
+ * \param led  The id of an LED (0〜)
+ * \param r    The value of red   (0〜255)
+ * \param g    The value of green (  "   )
+ * \param b    The value of blue  (  "   )
  */
 void ledSetColor(int led, int r, int g, int b)
 {
@@ -97,32 +131,32 @@ void ledSetColor(int led, int r, int g, int b)
 }
 
 /*
- * 色情報を送信!
+ * Send the color data to the LED strip!
  */
 void ledSend()
 {
-  static unsigned char buf[MAX_N_LED * 3 * RGB_BITS + SPACE];
+  static unsigned char buf[MAX_N_LED * 3 * RGB_BITS + RST_BITS];
   int i, j;
   for (i = 0; i < nLed; i++) {
     int col = ledColor[i];
     int mask = (1 << (3 * RGB_BITS - 1));
     for (j = 0; j < 3 * RGB_BITS; j++) {
-      buf[i * 3 * RGB_BITS + j] = ((col & mask) ? ONE : ZERO);
+      buf[i * 3 * RGB_BITS + j] = ((col & mask) ? T1H : T0H);
       mask >>= 1;
     }
   }
-  /* RET信号 */
-  for (i = 0; i < SPACE; i++) {
+  /* RESET code */
+  for (i = 0; i < RST_BITS; i++) {
     buf[nLed * 3 * RGB_BITS + i] = 0;
   }
-  pwmWriteBlock(buf, nLed * 3 * RGB_BITS + SPACE);
+  pwmWriteBlock(buf, nLed * 3 * RGB_BITS + RST_BITS);
 
   /* Wait until the fifo becomes empty */
   pwmWaitFifoEmpty();
 }
 
 /*
- * 全部消しましょう
+ * Turn off all lights.
  */
 void ledClearAll()
 {
@@ -134,11 +168,11 @@ void ledClearAll()
 }
 
 /*
- * 1素子の色をHSBで設定 (まだ送信しない)
- * \param led  素子番号 (0〜)
- * \param h    色相 (0〜359)
- * \param s    彩度 (0〜255)
- * \param v    輝度　〃
+ * Set the color of one LED in HSB (not sent to the strip in this function)
+ * \param led  The id of an LED (0〜)
+ * \param h    Hue        (0〜359)
+ * \param s    Saturation (0〜255)
+ * \param v    Brightness (  "   )
  */
 void ledSetColorHSB(int led, int h, int s, int v)
 {
@@ -146,7 +180,7 @@ void ledSetColorHSB(int led, int h, int s, int v)
   double f, ss;
   int p, q, t, r, g, b;
 
-  /* 各値を範囲に収めます */
+  /* constrain the values within ranges */
   if (h < 0)   { h = 0; }
   if (h > 359) { h = 359; }
   if (s < 0)   { s = 0; }
@@ -154,10 +188,10 @@ void ledSetColorHSB(int led, int h, int s, int v)
   if (s > RGB_MAX) { s = RGB_MAX; }
   if (v > RGB_MAX) { v = RGB_MAX; }
 
-  /* 60度ごとのグループ(0..5)に分けます */
+  /* hue grouping (0..5) */
   hgroup = (h / 60) % 6;
 
-  /* rgbに変換します */
+  /* convert into r,g,b */
   f  = (double)(h % 60) / 60;
   ss = (double)s / RGB_MAX;
   p  = (int)(v * (1.0 - ss));
@@ -172,6 +206,6 @@ void ledSetColorHSB(int led, int h, int s, int v)
   case 5: r = v; g = p; b = q; break;
   }
 
-  /* 変換結果を使います */
+  /* use the results */
   ledSetColor(led, r, g, b);
 }
