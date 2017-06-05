@@ -21,7 +21,8 @@ $ sudo ./rainbow.py
 ## Files
   - Python
     - sample.py -- サンプルプログラム
-    - rainbow.py -- サンプルその2。
+    - rainbow.py -- サンプルその2
+    - beep.py -- もう一方のPWMチャネルで圧電スピーカを鳴らすサンプル
   - C
     - serialled.c -- シリアルLEDテープを制御するライブラリ。pwmfifo.cを使用。
     - pwmfifo.c -- PWMのFIFO機能を使うための[WiringPi](http://wiringpi.com)もどきライブラリ。mailbox.cを使用。

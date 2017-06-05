@@ -84,10 +84,10 @@ int ledSetup(int gpioPin, int n)
   if (setupGpio() == -1) {
     return -1;
   }
-  pinModePwm(gpioPin);
-  pwmSetModeMS();	/* mark:space mode */
+  pinModePwmFifo(gpioPin);
+  pwmSetModeMS(gpioPin);	/* mark:space mode */
   pwmSetClock(PWM_CLOCK_DIV);
-  pwmSetRange(T_CYCLE);
+  pwmSetRange(gpioPin, T_CYCLE);
 
   if (n < 0) { return -1; }
   if (n > MAX_N_LED) { return -1; }

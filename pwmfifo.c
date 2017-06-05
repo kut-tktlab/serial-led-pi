@@ -206,53 +206,62 @@ int cleanupGpio()
  * ----------------
  */
 
-/* PWM mode */
-enum PwmMode {
-  PWM_MODE_NONE = 0,
-  PWM_MODE_BALANCED = 1,
-  PWM_MODE_MS = 2
-};
-static enum PwmMode pwmMode = PWM_MODE_NONE;
-
-/* PWM channel */
-enum PwmChannel {
-  PWM_CH_NONE = 0, PWM_CH1, PWM_CH2
-};
-static enum PwmChannel pwmChannel = PWM_CH_NONE;
+/* PWM channel (0 or 1) for a GPIO number */
+#define PWM_CH(p)	((p) & 1)
 
 /**
  * Set the pin mode to PWM_OUTPUT.
  * Only GPIO 12, 13, 18, and 19 are supported.
- * \param pin  GPIO number.
+ * \param  pin  GPIO number.
+ * \return 0 for success; -1 for failure.
  */
-void pinModePwm(int pin)
+int pinModePwm(int pin)
 {
   int alt;
   if (!(pin == 12 || pin == 13 || pin == 18 || pin == 19)) {
     fprintf(stderr, "pinModePwm: only GPIO 12,13,18,19 are supported.\n");
-    return;
+    return FAILURE;
   }
+  /* Clear the mode of the GPIO */
+  *(gpio + GPFSEL0 + pin/10) &= ~(7 << ((pin % 10) * 3));
+
   /* Set the mode of the GPIO to alt0 or alt5 */
   alt = (pin <= 13 ? GPFSEL_ALT0 : GPFSEL_ALT5);
-  *(gpio + GPFSEL0 + pin/10) = alt << ((pin % 10) * 3);
+  *(gpio + GPFSEL0 + pin/10) |= alt << ((pin % 10) * 3);
 
-  pwmChannel = ((pin & 1) == 0 ? PWM_CH1 : PWM_CH2);
+  return SUCCESS;
+}
+
+/**
+ * Set the pin mode to PWM_OUTPUT with being feeded through FIFO.
+ * Only GPIO 12, 13, 18, and 19 are supported.
+ * \param pin  GPIO number.
+ */
+int pinModePwmFifo(int pin)
+{
+  if (pinModePwm(pin) == FAILURE) {
+    return FAILURE;
+  }
+  *(pwm + PWM_CTL) |= (PWM_CH(pin) == 0 ? PWM1_USEFIFO : PWM2_USEFIFO);
+  return SUCCESS;
 }
 
 /**
  * Set the PWM to the balanced mode.
+ * \param pin  GPIO number.
  */
-void pwmSetModeBalanced()
+void pwmSetModeBalanced(int pin)
 {
-  pwmMode = PWM_MODE_BALANCED;
+  *(pwm + PWM_CTL) &= ~(PWM_CH(pin) == 0 ? PWM1_MSMODE : PWM2_MSMODE);
 }
 
 /**
  * Set the PWM to the mark:space mode.
+ * \param pin  GPIO number.
  */
-void pwmSetModeMS()
+void pwmSetModeMS(int pin)
 {
-  pwmMode = PWM_MODE_MS;
+  *(pwm + PWM_CTL) |= (PWM_CH(pin) == 0 ? PWM1_MSMODE : PWM2_MSMODE);
 }
 
 /**
@@ -262,16 +271,10 @@ void pwmSetClock(unsigned int divider)
 {
   unsigned int pwmctl;
 
-  /* Set the PWM control register at first */
+  /* Enable the PWM channels at first */
   /* (I don't know why but unless doing so, PWM didn't work) */
-  if (pwmMode == PWM_MODE_NONE || pwmChannel == PWM_CH_NONE) {
-    fprintf(stderr, "Warning: Please set the pwm mode before pwmSetClock()\n");
-  }
-  pwmctl = (pwmChannel == PWM_CH1 ? (PWM1_USEFIFO | PWM1_ENABLE)
-                                  : (PWM2_USEFIFO | PWM2_ENABLE));
-  if (pwmMode == PWM_MODE_MS) {
-    pwmctl |= (pwmChannel == PWM_CH1 ? PWM1_MSMODE : PWM2_MSMODE);
-  }
+  pwmctl = *(pwm + PWM_CTL);
+  pwmctl |= PWM1_ENABLE | PWM2_ENABLE;
   *(pwm + PWM_CTL) = pwmctl;
 
   /* Stop the clock */
@@ -296,13 +299,22 @@ void pwmSetClock(unsigned int divider)
 
 /**
  * Set PWM range.
+ * \param pin   GPIO number.
+ * \param range The number of the clock cycles of one PWM cycle.
  */
-void pwmSetRange(unsigned int range)
+void pwmSetRange(int pin, unsigned int range)
 {
-  *(pwm + PWM_RNG1) = range;
-  usleep(10);
-  *(pwm + PWM_RNG2) = range;
-  usleep(10);
+  *(pwm + (PWM_CH(pin) == 0 ? PWM_RNG1 : PWM_RNG2)) = range;
+}
+
+/**
+ * Write a single word to the PWM peripheral.
+ * \param pin  GPIO number.
+ * \param data Word to be written to the PWM peripheral.
+ */
+void pwmWrite(int pin, unsigned int data)
+{
+  *(pwm + (PWM_CH(pin) == 0 ? PWM_DAT1 : PWM_DAT2)) = data;
 }
 
 /*
