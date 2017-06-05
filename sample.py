@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # シリアルLEDテープを点灯させるよ
-# (c) kut-tktlab, 2017
+# (c) yoshiaki takata, 2017
 
 from ctypes import cdll	# C言語の関数を呼び出します
 import sys
