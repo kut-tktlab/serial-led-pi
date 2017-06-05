@@ -188,6 +188,7 @@ int setupGpio()
   if (setupDma() == FAILURE) {
     return FAILURE;
   }
+  *(pwm + PWM_CTL) = 0;	/* reset PWM */
   return SUCCESS;
 }
 
@@ -242,6 +243,7 @@ int pinModePwmFifo(int pin)
   if (pinModePwm(pin) == FAILURE) {
     return FAILURE;
   }
+  *(pwm + PWM_CTL) &= ~(PWM1_USEFIFO | PWM2_USEFIFO);
   *(pwm + PWM_CTL) |= (PWM_CH(pin) == 0 ? PWM1_USEFIFO : PWM2_USEFIFO);
   return SUCCESS;
 }
