@@ -150,9 +150,6 @@ void ledSend()
     buf[nLed * 3 * RGB_BITS + i] = 0;
   }
   pwmWriteBlock(buf, nLed * 3 * RGB_BITS + RST_BITS);
-
-  /* Wait until the fifo becomes empty */
-  pwmWaitFifoEmpty();
 }
 
 /*
