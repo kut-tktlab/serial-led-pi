@@ -145,7 +145,7 @@ static volatile uint32_t *dma;
 static int setupDma(void);
 static void cleanupDma(void);
 
-/*
+/**
  * An aux function doing mmap
  */
 static void *mmapControlRegs(int fd, off_t offset)
@@ -158,8 +158,9 @@ static void *mmapControlRegs(int fd, off_t offset)
   return p;
 }
 
-/*
+/**
  * Set up this GPIO-manipulation module.
+ * \return 0 for success; -1 for failure.
  */
 int setupGpio()
 {
@@ -190,8 +191,9 @@ int setupGpio()
   return SUCCESS;
 }
 
-/*
- * Clean up
+/**
+ * Clean up.
+ * \return 0 for success; -1 for failure.
  */
 int cleanupGpio()
 {
@@ -218,9 +220,10 @@ enum PwmChannel {
 };
 static enum PwmChannel pwmChannel = PWM_CH_NONE;
 
-/*
+/**
  * Set the pin mode to PWM_OUTPUT.
  * Only GPIO 12, 13, 18, and 19 are supported.
+ * \param pin  GPIO number.
  */
 void pinModePwm(int pin)
 {
@@ -236,7 +239,7 @@ void pinModePwm(int pin)
   pwmChannel = ((pin & 1) == 0 ? PWM_CH1 : PWM_CH2);
 }
 
-/*
+/**
  * Set the PWM to the balanced mode.
  */
 void pwmSetModeBalanced()
@@ -244,7 +247,7 @@ void pwmSetModeBalanced()
   pwmMode = PWM_MODE_BALANCED;
 }
 
-/*
+/**
  * Set the PWM to the mark:space mode.
  */
 void pwmSetModeMS()
@@ -252,7 +255,7 @@ void pwmSetModeMS()
   pwmMode = PWM_MODE_MS;
 }
 
-/*
+/**
  * Set PWM clock divider.
  */
 void pwmSetClock(unsigned int divider)
@@ -291,7 +294,7 @@ void pwmSetClock(unsigned int divider)
   *(pwm + PWM_CTL) = pwmctl;
 }
 
-/*
+/**
  * Set PWM range.
  */
 void pwmSetRange(unsigned int range)
@@ -357,8 +360,9 @@ typedef struct {
 /* control register for a specified channel */
 static volatile uint32_t *dmaCh;
 
-/*
+/**
  * Allocate memory pages of which physical addresses are known.
+ * \return 0 for success; -1 for failure.
  */
 static int allocPagesForDma()
 {
@@ -389,7 +393,7 @@ static int allocPagesForDma()
   return SUCCESS;
 }
 
-/* Wait for the DMA channel to be inactive */
+/** Wait for the DMA channel to be inactive */
 static void waitDmaInactive()
 {
   while ((*(dmaCh + DMA_CS) & DMA_ACTIVE) != 0) {
@@ -397,7 +401,7 @@ static void waitDmaInactive()
   }
 }
 
-/*
+/**
  * Clean up the memories allocated for DMA
  */
 static void cleanupDma()
@@ -417,14 +421,14 @@ static void cleanupDma()
   }
 }
 
-/* signal handler for cleaning up */
+/** signal handler for cleaning up */
 static void terminationHandler(int signum)
 {
   cleanupDma();
   signum = signum;	/* suppress 'unused' warning */
 }
 
-/*
+/**
  * Set up the DMA controller
  */
 static int setupDma()
@@ -458,9 +462,10 @@ static int setupDma()
   return SUCCESS;
 }
 
-/*
+/**
  * Create a control block and run DMA.
  * The DMA channel automatically stops after submitting one sequence.
+ * \param n_samples  The number of words to be transmitted.
  */
 static void startDma(int n_samples)
 {
@@ -487,8 +492,10 @@ static void startDma(int n_samples)
                 DMA_ACTIVE;				  /* go! */
 }
 
-/*
+/**
  * Write the contents of an array into PWM FIFO.
+ * \param array  Bytes to be transmitted to the PWM peripheral.
+ * \param n      The number of bytes in `array`.
  */
 void pwmWriteBlock(const unsigned char *array, int n)
 {
@@ -512,7 +519,7 @@ void pwmWriteBlock(const unsigned char *array, int n)
   startDma(n);
 }
 
-/*
+/**
  * Wait until the FIFO becomes empty.
  */
 void pwmWaitFifoEmpty()

@@ -72,7 +72,7 @@ static int nLed;
 static unsigned int ledColor[MAX_N_LED];
 
 
-/*
+/**
  * Setting up the hardware:
  * call this function at the beginning.
  * \param gpioPin  GPIO-number for the LED strip.
@@ -95,7 +95,7 @@ int ledSetup(int gpioPin, int n)
   return 0;
 }
 
-/*
+/**
  * Cleaning up: call this function at the end.
  */
 void ledCleanup()
@@ -106,7 +106,7 @@ void ledCleanup()
 
 #define PACK_COLOR(h,m,l)  (((h)<<(2*RGB_BITS))|((m)<<RGB_BITS)|(l))
 
-/*
+/**
  * Set the color of one LED (not sent to the strip in this function)
  * \param led  The id of an LED (0〜)
  * \param r    The value of red   (0〜255)
@@ -130,7 +130,7 @@ void ledSetColor(int led, int r, int g, int b)
 #endif
 }
 
-/*
+/**
  * Send the color data to the LED strip!
  */
 void ledSend()
@@ -152,7 +152,7 @@ void ledSend()
   pwmWriteBlock(buf, nLed * 3 * RGB_BITS + RST_BITS);
 }
 
-/*
+/**
  * Turn off all lights.
  */
 void ledClearAll()
@@ -164,7 +164,7 @@ void ledClearAll()
   ledSend();
 }
 
-/*
+/**
  * Set the color of one LED in HSB (not sent to the strip in this function)
  * \param led  The id of an LED (0〜)
  * \param h    Hue        (0〜359)
