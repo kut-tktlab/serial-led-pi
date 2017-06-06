@@ -1,7 +1,14 @@
 # serial-led-pi
 
+<a href="https://www.youtube.com/watch?v=Gf6LSokECh0"><img
+src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo1.jpg" width="281"
+alt="a link to a demo movie on youtube" /></a>&nbsp;
+<a href="https://youtu.be/Gf6LSokECh0?t=11s"><img
+src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo2.jpg" width="281"
+alt="a link to another demo movie" /></a>
+
 シリアルLEDテープを光らせる簡単なプログラムとライブラリ。<br/>
-[Switch Science](https://www.switch-science.com) [SSCI-014007](http://ssci.to/1400) や [Adafruit](https://www.adafruit.com) [NeoPixel](https://www.adafruit.com/category/168) 等のLEDテープをRaspberry Piで光らせます。
+[Switch Science](https://www.switch-science.com) [SSCI-014007](http://ssci.to/1400) や [Adafruit](https://www.adafruit.com) [NeoPixel](https://www.adafruit.com/category/168) 等のLEDテープ / リングをRaspberry Piで光らせます。
 
 ## Quick Start
 
@@ -14,7 +21,7 @@ $ sudo ./rainbow.py
 ```
 
  - RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから実行してください (なお，RPi 3 以外の動作確認はしていません)。
- - 18番以外のGPIOピンを使う場合は，上記のPythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
+ - GPIO #18以外の端子を使う場合は，Pythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
  - WS2812Bコントローラ (1ビットの長さ1.25&micro;s, High出力時間 (T0H, T1H) 0.4&micro;s, 0.8&micro;s) の通信仕様に合わせています。ちがう場合は `serialled.c` 中の定数を変更してください。
 
 
