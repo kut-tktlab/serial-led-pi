@@ -21,8 +21,8 @@ $ sudo ./rainbow.py
 ```
 
  - LEDモジュールの個数に応じてPythonプログラム中の `N_LED` の値を変更してください (上記写真 左のテープは10，右のリングは12)。
- - RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから make を実行してください (なお，RPi 3 以外の動作確認はしていません)。
  - GPIO #18以外の端子を使う場合は，Pythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
+ - Raspberry Pi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから make を実行してください (なお，Raspberry Pi 3 以外の動作確認はしていません)。
  - WS2812Bコントローラ (1ビットの長さ1.25&micro;s, High出力時間 (T0H, T1H) 0.4&micro;s, 0.8&micro;s) の通信仕様に合わせています。ちがう場合は `serialled.c` 中の定数を変更してください。
 
 
