@@ -3,7 +3,7 @@
 <a href="https://www.youtube.com/watch?v=Gf6LSokECh0"><img
 src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo1.jpg" width="281"
 alt="a link to a demo movie on youtube" /></a>&nbsp;
-<a href="https://youtu.be/Gf6LSokECh0?t=11s"><img
+<a href="https://youtu.be/Gf6LSokECh0?t=12s"><img
 src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo2.jpg" width="281"
 alt="a link to another demo movie" /></a>
 
@@ -12,7 +12,7 @@ alt="a link to another demo movie" /></a>
 
 ## Quick Start
 
-[SSCI-014007](http://ssci.to/1400) のDIN端子をGPIO #18に，+5V, GND端子をそれぞれ5V, GND端子に接続し，下記を実行してください。
+LEDテープ / リングのData-In端子をGPIO #18に，+5V, GND端子をそれぞれ5V, GND端子に接続し，下記を実行してください。
 
 ```sh
 $ make
@@ -20,7 +20,8 @@ $ sudo ./sample.py
 $ sudo ./rainbow.py
 ```
 
- - RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから実行してください (なお，RPi 3 以外の動作確認はしていません)。
+ - LEDモジュールの個数に応じてPythonプログラム中の `N_LED` の値を変更してください (上記写真 左のテープは10，右のリングは12)。
+ - RPi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから make を実行してください (なお，RPi 3 以外の動作確認はしていません)。
  - GPIO #18以外の端子を使う場合は，Pythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
  - WS2812Bコントローラ (1ビットの長さ1.25&micro;s, High出力時間 (T0H, T1H) 0.4&micro;s, 0.8&micro;s) の通信仕様に合わせています。ちがう場合は `serialled.c` 中の定数を変更してください。
 
@@ -47,7 +48,7 @@ Pythonの [ctypes](https://docs.python.jp/3/library/ctypes.html) ライブラリ
 PWMハードウェアに[DMA](https://ja.wikipedia.org/wiki/Direct_Memory_Access)でデータを送り込むことで，PWM信号を送出します (pwmfifo.c)。
 
 - 通信速度が比較的高速
-([SSCI-014007](http://ssci.to/1400)の場合は 1bit / 1.25 &micro;s = 0.8 Mbps)，かつ数百ビット (= LED数 &times; 24) を途切れずに送信しなければだめ。
+(WS2812Bの場合は 1bit / 1.25 &micro;s = 0.8 Mbps)，かつ数百ビット (= LED数 &times; 24) を途切れずに送信しなければだめ。
 - 初期コミットではCPUで送信制御していたが，たまに処理が間に合わないこと (によると思われる間違った色出力) があった。
 
 DMAを使う場合はメモリの物理アドレスを指定する必要があるので，mailbox.c を使って，物理メモリ空間上の領域確保とアドレス取得を行っています。
