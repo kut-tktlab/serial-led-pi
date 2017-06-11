@@ -45,13 +45,15 @@ Pythonの [ctypes](https://docs.python.jp/3/library/ctypes.html) ライブラリ
 
 ### 内部の仕組み
 
+(研究室メンバー向けの少し詳しい説明は[こちら](https://github.com/kut-tktlab/serial-led-pi/wiki/Pwm)。)
+
 PWMハードウェアに[DMA](https://ja.wikipedia.org/wiki/Direct_Memory_Access)でデータを送り込むことで，PWM信号を送出します (pwmfifo.c)。
 
 - 通信速度が比較的高速
 (WS2812Bの場合は 1bit / 1.25 &micro;s = 0.8 Mbps)，かつ数百ビット (= LED数 &times; 24) を途切れずに送信しなければだめ。
 - 初期コミットではCPUで送信制御していたが，たまに処理が間に合わないこと (によると思われる間違った色出力) があった。
 
-DMAを使う場合はメモリの物理アドレスを指定する必要があるので，mailbox.c を使って，物理メモリ空間上の領域確保とアドレス取得を行っています。
+DMAを使う場合はメモリの物理アドレスを指定する必要があるので，mailbox.c を使って，物理アドレス空間上の領域確保とアドレス取得を行っています。
 
 mailbox.c の使い方も含め，DMAの使い方については下記を参考にしました。
 
