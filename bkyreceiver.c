@@ -61,7 +61,10 @@ int main(int argc, char **argv)
   printf("gpioPin=%d, nLed=%d\n", gpioPin, nLed);
 
   /* Set up */
-  ledSetup(gpioPin, nLed);
+  if (ledSetup(gpioPin, nLed) == -1) {
+    fprintf(stderr, "cannot setup serial led.\n");
+    return 1;
+  }
 
   fd = open(LED_FIFO, O_RDONLY);
   if (fd == -1) {
