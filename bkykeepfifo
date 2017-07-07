@@ -1,0 +1,13 @@
+#!/bin/bash
+# Keep the fifo being opened several hours.
+
+fifo=/tmp/bky-led-fifo
+
+# Create the fifo if not exist.
+if [ ! -p "$fifo" ]; then
+  mkfifo "$fifo"
+fi
+
+# Keep the fifo being opened.
+sleep 30000 >"$fifo" &
+echo "A background process (pid=$!) has been launched."

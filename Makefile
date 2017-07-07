@@ -1,13 +1,14 @@
 CFLAGS = -W -Wall
 LDFLAGS =
+OBJS = serialled.o pwmfifo.o mailbox.o
 
 .PHONY: all
-all: serialled.so bkyreceiver
+all: serialled.so
 
-serialled.so: serialled.o pwmfifo.o mailbox.o
+serialled.so: $(OBJS)
 	$(CC) $(LDFLAGS) $+ -shared -o $@
 
-bkyreceiver: bkyreceiver.o serialled.o pwmfifo.o mailbox.o
+bkyreceiver: bkyreceiver.o $(OBJS)
 	$(CC) $(LDFLAGS) $+ -o $@
 
 .PHONY: clean
