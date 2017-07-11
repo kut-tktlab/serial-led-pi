@@ -4,7 +4,7 @@
  *
  * Keep on waiting for data coming thru a named pipe,
  * and when receiving a data, call the functions in
- * serialled.so.
+ * serialled.c.
  *
  * Data format:
  * #xxxxxx#xxxxxx...#xxxxxx\n
@@ -14,9 +14,11 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/file.h>
 #include "serialled.h"
 
 #define LED_FIFO  "/tmp/bky-led-fifo"
+#define LOCK_FILE "/tmp/bky.lock"
 #define DEFAULT_GPIO_PIN  18
 #define DEFAULT_N_LED     12
 #define BUF_SIZE  1024  /* must > 7 * N_LED */
@@ -27,7 +29,7 @@
 
 int main(int argc, char **argv)
 {
-  int fd;
+  int fd, lockfd;
   static char buf[BUF_SIZE];  
   unsigned int nbyte;
   int gpioPin = DEFAULT_GPIO_PIN;
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
     case '?':
       if (optopt == 'g' || optopt == 'n') {
         fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-      } else {
+      } else if (optopt != 'h') {
         fprintf(stderr, "Unknown option: -%c\n", optopt);
       }
       fprintf(stderr, "Usage: %s [-g gpio_pin] [-n n_led]\n", argv[0]);
@@ -57,8 +59,25 @@ int main(int argc, char **argv)
     }
   }
 
-  printf("Starting the blockly-receiver...\n");
-  printf("gpioPin=%d, nLed=%d\n", gpioPin, nLed);
+  /* Create a lock file to avoid double launch */
+  lockfd = open(LOCK_FILE, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+  if (lockfd == -1) {
+    perror(LOCK_FILE);
+    exit(1);
+  }
+  if (flock(lockfd, LOCK_EX | LOCK_NB) == -1) {
+    perror("flock");
+    fprintf(stderr, "Maybe bkyreceiver is already running.\n");
+    close(lockfd);
+    exit(1);
+  }
+
+  /* Open the fifo */
+  fd = open(LED_FIFO, O_RDONLY);
+  if (fd == -1) {
+    perror(LED_FIFO);
+    exit(1);
+  }
 
   /* Set up */
   if (ledSetup(gpioPin, nLed) == -1) {
@@ -66,11 +85,8 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  fd = open(LED_FIFO, O_RDONLY);
-  if (fd == -1) {
-    perror(LED_FIFO);
-    exit(1);
-  }
+  printf("Successfully launched blockly-receiver");
+  printf(" [ gpioPin=%d, nLed=%d ]\n", gpioPin, nLed);
 
   /* Receive one chunk of data */
   while ((nbyte = read(fd, buf, sizeof(buf))) > 0) {
@@ -85,7 +101,8 @@ int main(int argc, char **argv)
   }
 
   /* Clean up */
-  close(fd);
   ledCleanup();
+  close(fd);
+  close(lockfd);
   return 0;
 }
