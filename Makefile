@@ -8,8 +8,9 @@ all: serialled.so
 serialled.so: $(OBJS)
 	$(CC) $(LDFLAGS) $+ -shared -o $@
 
-bkyreceiver: bkyreceiver.o $(OBJS)
-	$(CC) $(LDFLAGS) $+ -o $@
+.PHONY: bky-led
+bky-led: bky-led.cc $(OBJS:.o=.c) binding.gyp
+	node-gyp configure build
 
 .PHONY: clean
 clean:
