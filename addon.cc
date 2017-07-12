@@ -12,7 +12,7 @@ extern "C" {
   #include "serialled.h"
 }
 
-namespace bky {
+namespace serialled {
 
 using v8::Exception;
 using v8::FunctionCallbackInfo;
@@ -55,9 +55,6 @@ void SetColor(const FunctionCallbackInfo<Value>& args) {
   if (convertArgs(args, v, 4) == FAILURE) { return; }
 
   ledSetColor(v[0], v[1], v[2], v[3]);
-
-  Local<Number> ret = Number::New(args.GetIsolate(), 0.0);
-  args.GetReturnValue().Set(ret);
 }
 
 void Setup(const FunctionCallbackInfo<Value>& args) {
@@ -72,14 +69,10 @@ void Setup(const FunctionCallbackInfo<Value>& args) {
 
 void Cleanup(const FunctionCallbackInfo<Value>& args) {
   ledCleanup();
-  Local<Number> ret = Number::New(args.GetIsolate(), 0.0);
-  args.GetReturnValue().Set(ret);
 }
 
 void Send(const FunctionCallbackInfo<Value>& args) {
   ledSend();
-  Local<Number> ret = Number::New(args.GetIsolate(), 0.0);
-  args.GetReturnValue().Set(ret);
 }
 
 void Init(Local<Object> exports) {
@@ -91,4 +84,4 @@ void Init(Local<Object> exports) {
 
 NODE_MODULE(addon, Init)
 
-}  // namespace bky
+}  // namespace serialled
