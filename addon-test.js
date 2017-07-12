@@ -1,5 +1,5 @@
 // $ node-gyp configure build
-// $ node addon-test.js
+// $ sudo node addon-test.js
 
 const ledlib = require('./build/Release/serialled');
 
