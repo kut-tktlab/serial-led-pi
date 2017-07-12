@@ -8,8 +8,8 @@ all: serialled.so
 serialled.so: $(OBJS)
 	$(CC) $(LDFLAGS) $+ -shared -o $@
 
-.PHONY: bky-led
-bky-led: bky-led.cc $(OBJS:.o=.c) binding.gyp
+.PHONY: addon
+addon: addon.cc $(OBJS:.o=.c) binding.gyp
 	node-gyp configure build
 
 .PHONY: clean

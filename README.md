@@ -31,12 +31,15 @@ $ sudo ./rainbow.py
     - sample.py -- サンプルプログラム
     - rainbow.py -- サンプルその2
     - beep.py -- もう一方のPWMチャネルで圧電スピーカを鳴らすサンプル
-  - C, etc.
+  - C
     - serialled.c -- シリアルLEDテープを制御するライブラリ。pwmfifo.cを使用。
     - pwmfifo.c -- PWMのFIFO機能を使うための[WiringPi](http://wiringpi.com)もどきライブラリ。mailbox.cを使用。
     - mailbox.c -- (c) Broadcom Europe Ltd. メモリを確保してbusアドレスを得るのに利用。
     - Makefile -- 上記をコンパイルする。
-    - bky-led.cc -- [blockly-for-led](https://github.com/kut-tktlab/blockly-for-led/) と接続する際に使う。詳しくは [blockly-for-led](https://github.com/kut-tktlab/blockly-for-led/) を参照。
+  - Node.js
+    - addon.cc -- serialled.c 中の関数をNode.jsから使えるようにする
+    - binding.gyp -- 上記をビルドする ([node-gyp](https://github.com/nodejs/node-gyp) が必要)。
+    - addon-test.js -- 動作テスト用スクリプト
 
 Pythonの [ctypes](https://docs.python.jp/3/library/ctypes.html) ライブラリを使って，serialled.c で定義された関数をPythonスクリプトから呼び出します。
 
