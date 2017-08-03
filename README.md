@@ -44,6 +44,16 @@ Note:
  - To use a GPIO pin other than #18, change the value of `LED_GPIO` in the Python programs. However, you can only use GPIO #12, 13, 18, or 19 (that can be connected to the hardware PWM).
  - Initially this library is configured for WS2812B controller (one bit per 1.25&micro;s; output High for 0.4&micro;s and 0.8&micro;s to represent 0 and 1, respectively). If your LED strip needs different settings, please change parameters defined in `serialled.c`.
 
+### For Node.js
+
+You need [node-gyp](https://github.com/nodejs/node-gyp) to build a Node.js Addon of this library.<br/>
+Install node-gyp and then run the following commands:
+
+```sh
+$ node-gyp configure build    # build the addon
+$ sudo node addon-test.js     # run a testing script
+```
+
 ## Files
   - Python
     - sample.py -- a sample program
@@ -64,9 +74,9 @@ You can call the functions of this library from your Python script using
 Consult sample.py and rainbow.py for the usage of the library functions.
 All functions of this library take int arguments.
 
-(This library does not depend on Python. I think it is not difficult to use the functions on other languages.)
+(This library does not depend on Python or JavaScript. I think it is not difficult to use the functions on other languages.)
 
-### Internals
+## Internals
 
 ([More details in Japanese](https://github.com/kut-tktlab/serial-led-pi/wiki/Pwm).)
 
@@ -74,14 +84,14 @@ It transmits PWM signals to an LED-strip or ring by providing data to the PWM ha
 using [DMA](https://en.wikipedia.org/wiki/Direct_Memory_Access) (in pwmfifo.c).
 
 - Relatively high-speed transmission is required
-(in WS2812B, 1bit / 1.25 &micro;s = 0.8 Mbps). Moreover, we have to transmit several handreds of bits (= N_LED &times; 24) without intermission.
+(for WS2812B, 1bit / 1.25 &micro;s = 0.8 Mbps). Moreover, we have to transmit several handreds of bits (= N_LED &times; 24) without intermission.
 - So, providing data to the PWM by CPU (earlier commits of this library was doing so) was not a good idea; it sometimes failed to be in time.
 
 To use DMA,
 we have to know the *physical* address of memory.
 This library uses mailbox.c to allocate memory in the physical address space and to obtain the address of that memory.
 
-I refered to the following repositories for the usage of DMA and mailbox.c in Raspberry Pi:
+References for the usage of mailbox.c and the DMA controller of Raspberry Pi:
 
 - <https://github.com/metachris/RPIO>
 - <https://github.com/hzeller/rpi-gpio-dma-demo>
