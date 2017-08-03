@@ -7,59 +7,81 @@ alt="a link to a demo movie on youtube" /></a>&nbsp;
 src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo2.jpg" width="281"
 alt="a link to another demo movie" /></a>
 
-シリアルLEDテープを光らせる簡単なプログラムとライブラリ。<br/>
-[Switch Science](https://www.switch-science.com) [SSCI-014007](http://ssci.to/1400) や [Adafruit](https://www.adafruit.com) [NeoPixel](https://www.adafruit.com/category/168) 等のLEDテープ / リングをRaspberry Piで光らせます。
+A simple library for controlling LED-strips and rings with Raspberry Pi.<br/>
+With it, you can make an LED-strip / -ring such as
+[Switch Science](https://www.switch-science.com) [SSCI-014007](http://ssci.to/1400) and [Adafruit](https://www.adafruit.com) [NeoPixel](https://www.adafruit.com/category/168) glitter using a Raspberry Pi.
+
+The library is written in C,
+and you can use it on Python (using [ctypes](https://docs.python.jp/3/library/ctypes.html))
+or on Node.js (as a native add-on).
+
+Note: [Adafruit](https://www.adafruit.com) provides
+[a library for RaspPi + NeoPixel](https://learn.adafruit.com/neopixels-on-raspberry-pi/software),
+which may be a better solution for the purpose of controlling LED-strips and rings on Raspberry Pi.
+A petit raison d'etre of my library is its smallness and simplicity.
+
 
 ## Quick Start
 
-LEDテープ / リングのData-In端子をGPIO #18に，+5V, GND端子をそれぞれ5V, GND端子に接続し，下記を実行してください。
+Connect the Data-In port of an LED-strip or ring to the GPIO #18
+(in [the GPIO numbering](https://www.raspberrypi.org/documentation/usage/gpio-plus-and-raspi2/), 
+not in the physical numbering) pin of a Raspberry Pi
+(If you use a Raspberry Pi 1 or Zero, then please see the note below).
+Also connect the +5V and GND ports of the strip or ring to the 5V and GND pins of the Raspberry Pi, respectively.
+
+Then, turn on the Raspberry Pi and run the following commands:
 
 ```sh
-$ make
-$ sudo ./sample.py
-$ sudo ./rainbow.py
+$ make                # compile .c files
+$ sudo ./sample.py    # run a sample program
+$ sudo ./rainbow.py   # run another sample program
 ```
 
- - LEDモジュールの個数に応じてPythonプログラム中の `N_LED` の値を変更してください (上記写真 左のテープは10，右のリングは12)。
- - GPIO #18以外の端子を使う場合は，Pythonプログラム中の `LED_GPIO` の値を変更してください。ただし，12, 13, 18, 19 (ハードウェアPWMに接続可能なポート) しか使えません。
- - Raspberry Pi 1やZeroの場合は，pwmfifo.c 中の `PI_VERSION` の値を 1 に変更してから make を実行してください (なお，Raspberry Pi 3 以外の動作確認はしていません)。
- - WS2812Bコントローラ (1ビットの長さ1.25&micro;s, High出力時間 (T0H, T1H) 0.4&micro;s, 0.8&micro;s) の通信仕様に合わせています。ちがう場合は `serialled.c` 中の定数を変更してください。
+Note:
 
+ - For Raspberry Pi 1 and Zero, please change the value of `PI_VERSION` in `pwmfifo.c` into 1 and then run `make` (Note that I have only tested this library on Raspberry Pi 3).
+ - Please change the value of `N_LED` in the Python programs according to the number of LEDs on your strip or ring (e.g. 10 LEDs on the strip in the above left-hand photo; 12 LEDs on the ring in the above right-hand photo).
+ - To use a GPIO pin other than #18, change the value of `LED_GPIO` in the Python programs. However, you can only use GPIO #12, 13, 18, or 19 (that can be connected to the hardware PWM).
+ - Initially this library is configured for WS2812B controller (one bit per 1.25&micro;s; output High for 0.4&micro;s and 0.8&micro;s to represent 0 and 1, respectively). If your LED strip needs different settings, please change parameters defined in `serialled.c`.
 
 ## Files
   - Python
-    - sample.py -- サンプルプログラム
-    - rainbow.py -- サンプルその2
-    - beep.py -- もう一方のPWMチャネルで圧電スピーカを鳴らすサンプル
+    - sample.py -- a sample program
+    - rainbow.py -- another sample program
+    - beep.py -- yet another sample program that beep a piezo speaker using the other PWM channel
   - C
-    - serialled.c -- シリアルLEDテープを制御するライブラリ。pwmfifo.cを使用。
-    - pwmfifo.c -- PWMのFIFO機能を使うための[WiringPi](http://wiringpi.com)もどきライブラリ。mailbox.cを使用。
-    - mailbox.c -- (c) Broadcom Europe Ltd. メモリを確保してbusアドレスを得るのに利用。
-    - Makefile -- 上記をコンパイルする。
+    - serialled.c -- a library for controlling serial LED strips. It depends on pwmfifo.c.
+    - pwmfifo.c -- a [WiringPi](http://wiringpi.com)-like library for using the FIFO of the PWM. It depends on mailbox.c.
+    - mailbox.c -- (c) Broadcom Europe Ltd. It defines functions for allocating memory and getting the bus address of it.
+    - Makefile -- used for compiling the above C files.
   - Node.js
-    - addon.cc -- serialled.c 中の関数をNode.jsから使えるようにする
-    - binding.gyp -- 上記をビルドする ([node-gyp](https://github.com/nodejs/node-gyp) が必要)。
-    - addon-test.js -- 動作テスト用スクリプト
+    - addon.cc -- It makes the functions in serialled.c visible from Node.js.
+    - binding.gyp -- a build setting file for addon.cc ([node-gyp](https://github.com/nodejs/node-gyp) is required).
+    - addon-test.js -- a testing script of addon.cc.
 
-Pythonの [ctypes](https://docs.python.jp/3/library/ctypes.html) ライブラリを使って，serialled.c で定義された関数をPythonスクリプトから呼び出します。
+You can call the functions of this library from your Python script using
+[ctypes](https://docs.python.jp/3/library/ctypes.html).
+Consult sample.py and rainbow.py for the usage of the library functions.
+All functions of this library take int arguments.
 
-関数の使い方は sample.py, rainbow.py を参照してください。各関数の引数はすべて整数型です。
+(This library does not depend on Python. I think it is not difficult to use the functions on other languages.)
 
-(Pythonに依存している箇所は特にありません。他の言語から呼び出すのも容易と思います。)
+### Internals
 
-### 内部の仕組み
+([More details in Japanese](https://github.com/kut-tktlab/serial-led-pi/wiki/Pwm).)
 
-(研究室メンバー向けの少し詳しい説明は[こちら](https://github.com/kut-tktlab/serial-led-pi/wiki/Pwm)。)
+It transmits PWM signals to an LED-strip or ring by providing data to the PWM hardware
+using [DMA](https://en.wikipedia.org/wiki/Direct_Memory_Access) (in pwmfifo.c).
 
-PWMハードウェアに[DMA](https://ja.wikipedia.org/wiki/Direct_Memory_Access)でデータを送り込むことで，PWM信号を送出します (pwmfifo.c)。
+- Relatively high-speed transmission is required
+(in WS2812B, 1bit / 1.25 &micro;s = 0.8 Mbps). Moreover, we have to transmit several handreds of bits (= N_LED &times; 24) without intermission.
+- So, providing data to the PWM by CPU (earlier commits of this library was doing so) was not a good idea; it sometimes failed to be in time.
 
-- 通信速度が比較的高速
-(WS2812Bの場合は 1bit / 1.25 &micro;s = 0.8 Mbps)，かつ数百ビット (= LED数 &times; 24) を途切れずに送信しなければだめ。
-- 初期コミットではCPUで送信制御していたが，たまに処理が間に合わないこと (によると思われる間違った色出力) があった。
+To use DMA,
+we have to know the *physical* address of memory.
+This library uses mailbox.c to allocate memory in the physical address space and to obtain the address of that memory.
 
-DMAを使う場合はメモリの物理アドレスを指定する必要があるので，mailbox.c を使って，物理アドレス空間上の領域確保とアドレス取得を行っています。
-
-mailbox.c の使い方も含め，DMAの使い方については下記を参考にしました。
+I refered to the following repositories for the usage of DMA and mailbox.c in Raspberry Pi:
 
 - <https://github.com/metachris/RPIO>
 - <https://github.com/hzeller/rpi-gpio-dma-demo>
@@ -73,10 +95,3 @@ MIT.
 subdirectory `/host_applications/linux/apps/hello_pi/hello_fft` of
 <https://github.com/raspberrypi/userland/>.<br/>
 See the top of those files for their license.
-
-## Note
-
-[Adafruit](https://www.adafruit.com) から
-RaspPi + NeoPixel用の[ライブラリ](https://learn.adafruit.com/neopixels-on-raspberry-pi/software)が提供されているようなので，最初からそれを使えばよかったのでは? と自分でも思いますが…。
-
-単純で，標準のツールとライブラリだけで使えるのがささやかな存在意義かと思います。
