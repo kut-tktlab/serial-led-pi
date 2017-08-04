@@ -40,9 +40,17 @@ $ sudo ./rainbow.py   # run another sample program
 Note:
 
  - For Raspberry Pi 1 and Zero, please change the value of `PI_VERSION` in `pwmfifo.c` into 1 and then run `make` (Note that I have only tested this library on Raspberry Pi 3).
- - Please change the value of `N_LED` in the Python programs according to the number of LEDs on your strip or ring (e.g. 10 LEDs on the strip in the above left-hand photo; 12 LEDs on the ring in the above right-hand photo).
+ - Please change the value of `N_LED` in the Python programs according to the number of LEDs on your strip or ring (e.g. 10 LEDs on the strip in the above left-hand picture; 12 LEDs on the ring in the above right-hand picture).
  - To use a GPIO pin other than #18, change the value of `LED_GPIO` in the Python programs. However, you can only use GPIO #12, 13, 18, or 19 (that can be connected to the hardware PWM).
  - Initially this library is configured for WS2812B controller (one bit per 1.25&micro;s; output High for 0.4&micro;s and 0.8&micro;s to represent 0 and 1, respectively). If your LED strip needs different settings, please change parameters defined in `serialled.c`.
+
+The upper limit of `N_LED` (`MAX_N_LED`) is defined as 100 in `serialled.h`.
+(A strip with 60 LEDs was used in the movie linked from the below picture.
+Note that for such a strip with many LEDs, you may have to provide electricity to the strip not through a Raspberry Pi.)
+
+<a href="https://www.youtube.com/watch?v=8v1YTqdLEDs"><img
+src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo3.jpg" width="281"
+alt="a link to yet another demo movie on youtube" /></a>
 
 ### For Node.js
 
