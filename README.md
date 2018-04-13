@@ -46,7 +46,8 @@ Note:
 
 The upper limit of `N_LED` (`MAX_N_LED`) is defined as 100 in `serialled.h`.
 (A strip with 60 LEDs was used in the movie linked from the below picture.
-Note that for such a strip with many LEDs, you may have to provide electricity to the strip not through a Raspberry Pi.)
+Note that for such a strip with many LEDs, you may have to provide electricity to the strip not through a Raspberry Pi.
+See a [wiki page](https://github.com/kut-tktlab/serial-led-pi/wiki/AcAdapter) for more detail.)
 
 <a href="https://www.youtube.com/watch?v=8v1YTqdLEDs"><img
 src="https://raw.github.com/wiki/kut-tktlab/serial-led-pi/demo3.jpg" width="281"
@@ -93,7 +94,7 @@ using [DMA](https://en.wikipedia.org/wiki/Direct_Memory_Access) (in pwmfifo.c).
 
 - Relatively high-speed transmission is required
 (for WS2812B, 1bit / 1.25 &micro;s = 0.8 Mbps). Moreover, we have to transmit several handreds of bits (= N_LED &times; 24) without intermission.
-- So, providing data to the PWM by CPU (earlier commits of this library was doing so) was not a good idea; it sometimes failed to be in time.
+- So, providing data to the PWM by CPU (earlier commits of this library were doing so) was not a good idea; it sometimes failed to be in time.
 
 To use DMA,
 we have to know the *physical* address of memory.
