@@ -491,7 +491,7 @@ static void startDma(int n_samples)
     return;
   }
 
-  cbp->info = DMA_NO_WIDE_BURSTS | DMA_WAIT_RESP |
+  cbp->info = /* DMA_NO_WIDE_BURSTS | */ DMA_WAIT_RESP |
               DMA_DEST_DREQ | DMA_PER_MAP(5) | DMA_SRC_INC;
   cbp->src = VIRT_TO_PHYS(srcp);
   cbp->dst = PWM_PHYS_FIFO;
