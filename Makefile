@@ -9,7 +9,7 @@ serialled.so: $(OBJS)
 	$(CC) $(LDFLAGS) $+ -shared -o $@
 
 rainbow: rainbow.o $(OBJS)
-	$(CC) $(LDFLAGS) $+ -o $@
+	$(CC) $(LDFLAGS) $+ -lm -o $@
 
 .PHONY: addon
 addon: addon.cc $(OBJS:.o=.c) binding.gyp

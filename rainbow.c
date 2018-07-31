@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <unistd.h>	/* usleep */
+#include <math.h>
 
 #include "serialled.h"
 
@@ -21,9 +22,19 @@
 /* 時刻 t, LED i の色を設定します Set the color of LED i at time t. */
 void setColor(int t, int i)
 {
-  int h = (i * (360 / N_LED) + t * 2) % 360;
   int s = 255;
-  int b = 128;
+
+  int t0 = (t + 540 + 90) % (360 * 6) - 3 * i;
+  t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;
+  t0 = t0 < 0 ? 0 : t0 > 180 ? 180 : t0;
+  float c = cos(t0 * M_PI / 180);
+  float b = (1 - c) * 255.0 / 2;
+  float f1 = 0.65 + 0.35 * sin((t - 3.2 * i + 51) * M_PI / 180);
+  float f2 = 0.65 + 0.35 * sin((t - 7   * i + 13) * M_PI / 180);
+  b *= f1 * f2;
+  float h = i * 256.0 / N_LED;
+  h = h + 256 - t % 256;
+  h = h > 256 ? h - 256 : h;
 
   /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
   ledSetColorHSB(i, h, s, b);
