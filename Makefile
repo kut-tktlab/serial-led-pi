@@ -1,4 +1,4 @@
-CFLAGS = -W -Wall
+CFLAGS = -W -Wall # -DNOT_USE_PLL=1
 LDFLAGS =
 OBJS = serialled.o pwmfifo.o mailbox.o
 

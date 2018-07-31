@@ -30,7 +30,11 @@
  * PWM clock divisor:
  * in pwmfifo.c, we choose PLL_D (500MHz) as the clock source.
  */
-#define PWM_CLOCK_DIV	25	/* 500MHz / 25 == 20MHz */
+#if NOT_USE_PLL
+# define PWM_CLOCK_DIV	2	/* 19.2MHz / 2 == 9.6MHz */
+#else
+# define PWM_CLOCK_DIV	25	/* 500MHz / 25 == 20MHz */
+#endif
 
 /*
  * PWM bit representation:
@@ -47,10 +51,16 @@
  *   T1H     = 0.8 us +-150ns
  *   RESET code = Low >=50us
  */
-#define T_CYCLE		25	/* 1.25us * 20MHz */
-#define T0H		8	/* 0.4 us */
-#define T1H		16	/* 0.8 us */
-#define RST_BITS	40	/* RESET (50us) == 40 * 1.25us */
+#if NOT_USE_PLL
+# define T_CYCLE	12	/* 1.25us * 9.6MHz */
+# define T0H		4	/* 0.4 us */
+# define T1H		8	/* 0.8 us */
+#else
+# define T_CYCLE	25	/* 1.25us * 20MHz */
+# define T0H		8	/* 0.4 us */
+# define T1H		16	/* 0.8 us */
+#endif
+# define RST_BITS	40	/* RESET (50us) == 40 * 1.25us */
 
 /*
  * Transmission order of R,G,B:
