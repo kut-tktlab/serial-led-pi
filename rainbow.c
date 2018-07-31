@@ -28,13 +28,12 @@ void setColor(int t, int i)
   t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;
   t0 = t0 < 0 ? 0 : t0 > 180 ? 180 : t0;
   float c = cos(t0 * M_PI / 180);
-  float b = (1 - c) * 255.0 / 2;
+  float v = (1 - c) * 255.0 / 2;
   float f1 = 0.65 + 0.35 * sin((t - 3.2 * i + 51) * M_PI / 180);
   float f2 = 0.65 + 0.35 * sin((t - 7   * i + 13) * M_PI / 180);
-  b *= f1 * f2;
-  float h = i * 256.0 / N_LED;
-  h = h + 256 - t % 256;
-  h = h > 256 ? h - 256 : h;
+  int b = (int)(v * f1 * f2);
+  int h = i * 360 / N_LED;
+  h = (h + 360 - t % 360) % 360;
 
   /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
   ledSetColorHSB(i, h, s, b);
