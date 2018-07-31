@@ -8,6 +8,9 @@ all: serialled.so
 serialled.so: $(OBJS)
 	$(CC) $(LDFLAGS) $+ -shared -o $@
 
+rainbow: rainbow.o $(OBJS)
+	$(CC) $(LDFLAGS) $+ -o $@
+
 .PHONY: addon
 addon: addon.cc $(OBJS:.o=.c) binding.gyp
 	node-gyp configure build
