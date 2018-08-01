@@ -22,16 +22,15 @@
 /* 時刻 t, LED i の色を設定します Set the color of LED i at time t. */
 void setColor(int t, int i)
 {
-  int s = 255;
-
-  int t0 = (t + 540 + 90) % (360 * 6) - 3 * i;
+  int t0 = (t + 540 + 90) % (360 * 8) - 3 * i;
   t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;
   t0 = t0 < 0 ? 0 : t0 > 180 ? 180 : t0;
   float c = cos(t0 * M_PI / 180);
-  float v = (1 - c) * 255.0 / 2;
-  float f1 = 0.65 + 0.35 * sin((t - 3.2 * i + 51) * M_PI / 180);
-  float f2 = 0.65 + 0.35 * sin((t - 7   * i + 13) * M_PI / 180);
-  int b = (int)(v * f1 * f2);
+  float v = (1.0 - c) * 255.0 / 2;
+  float f1 = 0.51 + 0.49 * sin((t - 3.2 * i + 51) * M_PI / 180);
+  float f2 = 0.51 + 0.49 * sin((t - 7   * i + 13) * M_PI / 180);
+  int b = (int)(v * (v < 255 * .7 ? 1.0 : f1 * f2));
+  int s = (int)(255 * (f1 + f2));
   int h = i * 360 / N_LED;
   h = (h + 360 - t % 360) % 360;
 
@@ -61,7 +60,7 @@ int main()
   usleep(1000 * 1000 * 5);
 
   /* 6時間点灯するよ Glitter for 6 hours. */
-  for (t = 0; t < 6 * 3600 * FPS; t++) {
+  for (t = 0; t < 2 * 60 * FPS; t++) {
     int led;
     for (led = 0; led < N_LED; led++) {
       /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
