@@ -60,7 +60,7 @@ int main()
   usleep(1000 * 1000 * 5);
 
   /* 6時間点灯するよ Glitter for 6 hours. */
-  for (t = 0; t < 2 * 60 * FPS; t++) {
+  for (t = 0; t < 6 * 3600 * FPS; t++) {
     int led;
     for (led = 0; led < N_LED; led++) {
       /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
