@@ -106,3 +106,44 @@ void ledClearAll()
   }
   ledSend();
 }
+
+/**
+ * Set the color of one LED in HSB (not sent to the strip in this function)
+ * \param led  The id of an LED (0〜)
+ * \param h    Hue        (0〜359)
+ * \param s    Saturation (0〜255)
+ * \param v    Brightness (  "   )
+ */
+void ledSetColorHSB(int led, int h, int s, int v)
+{
+  int hgroup, f;
+  int p, q, t, r, g, b;
+
+  /* constrain the values within ranges */
+  if (h < 0)   { h = 0; }
+  if (h > 359) { h = 359; }
+  if (s < 0)   { s = 0; }
+  if (v < 0)   { v = 0; }
+  if (s > RGB_MAX) { s = RGB_MAX; }
+  if (v > RGB_MAX) { v = RGB_MAX; }
+
+  /* hue grouping (0..5) */
+  hgroup = (h / 60) % 6;
+
+  /* convert into r,g,b */
+  f  = h % 60;  /* 0--59 */
+  p  = v * (RGB_MAX - s) / RGB_MAX;
+  q  = v * (RGB_MAX * 60 - f * s) / (RGB_MAX * 60);
+  t  = v * (RGB_MAX * 60 - (60 - f) * s) / (RGB_MAX * 60);
+  switch (hgroup) {
+  case 0: r = v; g = t; b = p; break;
+  case 1: r = q; g = v; b = p; break;
+  case 2: r = p; g = v; b = t; break;
+  case 3: r = p; g = q; b = v; break;
+  case 4: r = t; g = p; b = v; break;
+  case 5: r = v; g = p; b = q; break;
+  }
+
+  /* use the results */
+  ledSetColor(led, r, g, b);
+}

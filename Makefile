@@ -10,7 +10,7 @@ CFLAGS = -W -Wall
 LDFLAGS = -m armelf -no-undefined $(LIBS)
 
 IMG = ledtape.img
-OBJS = boot.o test.o serialled.o pwmfifo.o
+OBJS = boot.o rainbow.o sin.o serialled.o pwmfifo.o
 
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
