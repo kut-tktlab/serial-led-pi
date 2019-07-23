@@ -28,7 +28,7 @@ void setColor(int t, int i)
   t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;   /* triangle wave /\/\/\ */
   t0 = t0 < 0 ? 0 : t0 > 180 ? 180 : t0;        /* constrain(0, 180) */
   int c = cosdeg(t0);
-  int v = (255 - c) / 2;          /* one cycle per 1080/FPS seconds */
+  int v = (255 - c) / 2;          /* one cycle per 360 * 6/FPS seconds */
   int f1 = 165 + 90 * sindeg(t - 32 * i / 10 + 51) / 255;
   int f2 = 165 + 90 * sindeg(t - 70 * i / 10 + 13) / 255;
   int b = v * f1 / 255 * f2 / 255;
