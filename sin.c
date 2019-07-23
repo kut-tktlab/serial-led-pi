@@ -76,6 +76,21 @@ int sindeg(int x)
   return sign * res;
 }
 
+
+/*
+ * simple pseudo random generator
+ * (a sample implementation in POSIX IEEE 1003.1)
+ */
+static unsigned long next = 1;
+int rand(void) { /* RAND_MAX assumed to be 32767. */
+  next = next * 1103515245 + 12345;
+  return (unsigned)(next / 65536) % 32768;
+}
+
+void srand(unsigned int seed) {
+  next = seed;
+}
+
 #if STANDALONE
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,6 +114,9 @@ int main()
     ds += abs(ms - s);
   }
   printf("dc=%d, ds=%d\n", dc, ds);
+  for (xx = 0; xx < 10; xx++) {
+    printf("%d\n", rand());
+  }
   return 0;
 }
 #endif
