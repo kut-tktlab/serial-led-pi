@@ -20,18 +20,18 @@
 /* 時刻 t, LED i の色を設定します Set the color of LED i at time t. */
 void setColor(int t, int i)
 {
-  int s = 255;              /* saturation = max */
   int h = i * 360 / N_LED;  /* hue = 0..360 for each LED */
   h = (h + 360 - t % 360) % 360;  /* one cycle per 360/FPS seconds */
 
-  int t0 = (t + 540 + 90) % (360 * 6) - 3 * i;
-  t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;   /* triangle wave /\/\/\ */
+  int t0 = (t + 540 + 90) % (360 * 8) - 3 * i;
+  t0 = (t0 > 540 ? t0 - 540 : 540 - t0) - 90;   /* descend-ascend \/ */
   t0 = t0 < 0 ? 0 : t0 > 180 ? 180 : t0;        /* constrain(0, 180) */
   int c = cosdeg(t0);
-  int v = (255 - c) / 2;          /* one cycle per 360 * 6/FPS seconds */
-  int f1 = 165 + 90 * sindeg(t - 32 * i / 10 + 51) / 255;
-  int f2 = 165 + 90 * sindeg(t - 70 * i / 10 + 13) / 255;
-  int b = v * f1 / 255 * f2 / 255;
+  int v = (255 - c) / 2;          /* one cycle per 360 * 8/FPS seconds */
+  int f1 = 130 + 125 * sindeg(t - 32 * i / 10 + 51) / 255;
+  int f2 = 130 + 125 * sindeg(t - 70 * i / 10 + 13) / 255;
+  int b = v < 255 * 7 / 10 ? v : v * f1 / 255 * f2 / 255;
+  int s = f1 + f2;
 
   /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
   ledSetColorHSB(i, h, s, b);
