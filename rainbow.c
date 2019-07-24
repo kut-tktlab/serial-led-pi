@@ -30,7 +30,10 @@ void setColor(int t, int i)
   int v = (255 - c) / 2;          /* one cycle per 360 * 8/FPS seconds */
   int f1 = 130 + 125 * sindeg(t - 32 * i / 10 + 51) / 255;
   int f2 = 130 + 125 * sindeg(t - 70 * i / 10 + 13) / 255;
-  int b = v < 255 * 7 / 10 ? v : v * f1 / 255 * f2 / 255;
+  int b = v * f1 / 255 * f2 / 255;
+  b = 255 * 8 / 10 < v ? b :
+      255 * 6 / 10 < v ? (b * (v * 10 - 255 * 6)
+                        + v * (255 * 8 - v * 10)) / (8 - 6) / 255 : v;
   int s = f1 + f2;
 
   /* 色を設定 (まだ送信しない) Set the color (but not transmit yet). */
