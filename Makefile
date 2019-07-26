@@ -9,22 +9,19 @@ TARGET_ARCH = -march=armv8-a
 CFLAGS = -W -Wall
 LDFLAGS = -m armelf -no-undefined $(LIBS)
 
-IMG = ledtape.img
-OBJS = boot.o rainbow.o sin.o serialled.o pwmfifo.o
+IMG = rainbow.img raindrops.img
+OBJS = boot.o sin.o serialled.o pwmfifo.o
 
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
-
-%.elf: %.o
-	$(LD) $(LDFLAGS) $< -o $@
 
 %.img: %.elf
 	$(OBJCOPY) $< -O binary $@
 
 .PHONY: default install clean disas
-default: install
+default: $(IMG)
 
-ledtape.elf: $(OBJS)
+%.elf: $(OBJS) %.o
 	$(LD) $(LDFLAGS) $+ -o $@
 
 install: $(IMG)
