@@ -5,7 +5,8 @@ LD = $(TOOL_CHAIN)ld
 OBJCOPY = $(TOOL_CHAIN)objcopy
 OBJDUMP = $(TOOL_CHAIN)objdump
 
-TARGET_ARCH = -march=armv8-a
+TARGET_ARCH = -march=armv8-a # RPi3
+#TARGET_ARCH = -march=armv6   # RPi1/Zero
 CFLAGS = -W -Wall
 LDFLAGS = -m armelf -no-undefined $(LIBS)
 

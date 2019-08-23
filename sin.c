@@ -7,34 +7,25 @@
 #define PI   205887  /* M_PI * (2 ** 16) */
 #define ADJ  (1 << 16)
 
-static long long longdiv(long long t, int x) {
+static long long longdiv(long long t, unsigned short x) {
+  unsigned int h[4];
   int sign = 1;
-  if (x < 0) {
-    t = -t;
-    x = -x;
-  }
   if (t < 0) {
     sign = -sign;
     t = -t;
   }
-  int ll = (t & 0xffff);
-  int lh = ((t >> 16) & 0xffff);
-  int hl = ((t >> 32) & 0xffff);
-  int hh = ((t >> 48) & 0xffff);
-  hl += (hh % x) << 16;
-  hh /= x;
-  lh += (hl % x) << 16;
-  hl /= x;
-  ll += (lh % x) << 16;
-  lh /= x;
-  ll /= x;
-  t   = hh;
-  t <<= 16;
-  t  += hl;
-  t <<= 16;
-  t  += lh;
-  t <<= 16;
-  t  += ll;
+  h[0] = ( t        & 0xffff);
+  h[1] = ((t >> 16) & 0xffff);
+  h[2] = ((t >> 32) & 0xffff);
+  h[3] = ((t >> 48) & 0xffff);
+  h[2] += (h[3] % x) << 16; h[3] /= x;
+  h[1] += (h[2] % x) << 16; h[2] /= x;
+  h[0] += (h[1] % x) << 16; h[1] /= x;
+  h[0] /= x;
+  t  = h[3]; t <<= 16;
+  t += h[2]; t <<= 16;
+  t += h[1]; t <<= 16;
+  t += h[0];
   return sign * t;
 }
 
